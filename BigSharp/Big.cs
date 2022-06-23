@@ -109,6 +109,11 @@ namespace BigSharp
         }
         public Big(long n)
         {
+            if (Big.STRICT == true)
+            {
+                throw new BigException(INVALID + "value");
+            }
+
             var nString = n == 0 && 1 / (double)n < 0 ? "-0" : n.ToString(CultureInfo.InvariantCulture);
 
             parse(this, nString);
@@ -116,6 +121,11 @@ namespace BigSharp
 
         public Big(double n)
         {
+            if (Big.STRICT == true)
+            {
+                throw new BigException(INVALID + "value");
+            }
+
             var nString = n == 0 && 1 / n < 0 ? "-0" : n.ToString(CultureInfo.InvariantCulture);
 
             parse(this, nString);
@@ -123,6 +133,11 @@ namespace BigSharp
 
         public Big(decimal n)
         {
+            if (Big.STRICT == true)
+            {
+                throw new BigException(INVALID + "value");
+            }
+
             var nString = n == 0 && 1 / n < 0 ? "-0" : n.ToString(CultureInfo.InvariantCulture);
 
             parse(this, nString);
