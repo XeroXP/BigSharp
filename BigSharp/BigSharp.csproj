@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>1.0.0</Version>
+    <Authors>XeroXP</Authors>
+    <Description>Big in C#. Port of big.js. A small, fast C# library for arbitrary-precision decimal arithmetic.</Description>
+    <Copyright>Copyright (c) $(Authors) 2022</Copyright>
+    <PackageProjectUrl>https://github.com/XeroXP/BigSharp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/XeroXP/BigSharp.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageTags>big, bignumber, bigdecimal, arbitrary-precision, decimal-places</PackageTags>
+	<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+	<None Include="..\LICENSE">
+	  <Pack>True</Pack>
+	  <PackagePath>\</PackagePath>
+	</None>
+  </ItemGroup>
+
+</Project>
