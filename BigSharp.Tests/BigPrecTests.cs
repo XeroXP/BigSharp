@@ -14,26 +14,23 @@ namespace BigSharp.Tests
         [Test]
         public void Prec()
         {
-            var t = (object expected0, object value0, int p, RoundingMode? r) =>
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (object expected0, BigArgument value, int p, RoundingMode? r) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(value).Prec(p, r).ToFixed());
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(value).Prec(p, r).ToFixed());
             };
 
-            Big.DP = 20;
-            Big.RM = RoundingMode.ROUND_HALF_UP;
-            Big.NE = -7;
-            Big.PE = 21;
+            bigFactory.Config.DP = 20;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
+            bigFactory.Config.NE = -7;
+            bigFactory.Config.PE = 21;
 
-            BigTests.IsTrue(new Big(1).Prec(1) is Big);
+            BigTests.IsTrue(bigFactory.Big(1).Prec(1) is Big);
 
-            // Big.RM = 1
+            // bigFactory.Config.RM = 1
             t("0", 0, 1, null);
             t("1", 1, 1, null);
             t("1", 1, 2, null);
@@ -263,16 +260,11 @@ namespace BigSharp.Tests
             t("17069318170447559670824010313506648026528166586129880725091542343600550422997254786851016215940786230013064180480826097444101000000000000000000000000000000", "17069318170447559670824010313506648026528166586129880725091542343600550422997254786851016215940786230013064180480826097444101017117212949291335428804169206.4789414896747948034966909141270082719485508246318636726728954481", 125, RoundingMode.ROUND_HALF_UP);
             t("459159626088903852606631649784227594935229835299060973799218279323000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "459159626088903852606631649784227594935229835299060973799218279323713336570937633103595944583645177507124617629953771475688119656568329467957028808451626080.2157052326772496024245144704394972923671967963191881122863487049025806804492486980444650765391761189341478929086845849828893436948962388818123422", 66, RoundingMode.ROUND_DOWN);
 
-            t = (object expected0, object value0, int p, RoundingMode? r) =>
+            t = (object expected0, BigArgument value, int p, RoundingMode? r) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(value).Prec(p, r).ToExponential());
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(value).Prec(p, r).ToExponential());
             };
 
             t("-1.11070563555955986e+949884", "-1.1107056355595598537391E+949884", 18, RoundingMode.ROUND_UP);
@@ -321,9 +313,9 @@ namespace BigSharp.Tests
             t("9.48094821522133194405126162122334e+351074489623", "9.4809482152213319440512616212233329955405089941555240223386E+351074489623", 33, RoundingMode.ROUND_UP);
             t("3.9748340091494161936502395814742749549562853206914631e+3139", "3.97483400914941619365023958147427495495628532069146310E+3139", 55, RoundingMode.ROUND_HALF_UP);
 
-            BigTests.IsException(() => { new Big(0).Prec(0); }, "new Big(0).prec(0)");
-            BigTests.IsException(() => { new Big(1).Prec(0); }, "new Big(1).prec(0)");
-            BigTests.IsException(() => { new Big(1).Prec(-1); }, "new Big(1).prec(-1)");
+            BigTests.IsException(() => { bigFactory.Big(0).Prec(0); }, "bigFactory.Big(0).prec(0)");
+            BigTests.IsException(() => { bigFactory.Big(1).Prec(0); }, "bigFactory.Big(1).prec(0)");
+            BigTests.IsException(() => { bigFactory.Big(1).Prec(-1); }, "bigFactory.Big(1).prec(-1)");
 
             Assert.Pass();
         }

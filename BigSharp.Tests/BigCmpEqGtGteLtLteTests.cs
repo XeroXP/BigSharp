@@ -1,5 +1,4 @@
-﻿using BigSharp.Tests.Extensions;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using System.Globalization;
 
 namespace BigSharp.Tests
@@ -26,71 +25,68 @@ namespace BigSharp.Tests
              * lte     less than or equal to
              */
 
-            var t = (object a0, object b0, int expected) =>
+
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (BigArgument a, BigArgument b, int expected) =>
             {
-                Big? a = a0.ToBig();
-                Big? b = b0.ToBig();
-
-                if (a == null || b == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(CultureInfo.InvariantCulture), new Big(a).Cmp(b).ToString(CultureInfo.InvariantCulture));
+                BigTests.AreEqual(expected.ToString(CultureInfo.InvariantCulture), bigFactory.Big(a).Cmp(b).ToString(CultureInfo.InvariantCulture));
 
                 if (expected == 1)
                 {
-                    BigTests.IsTrue(new Big(a).Gt(b));
-                    BigTests.IsTrue(new Big(a).Gte(b));
-                    BigTests.IsTrue(!new Big(a).Eq(b));
-                    BigTests.IsTrue(!new Big(a).Lt(b));
-                    BigTests.IsTrue(!new Big(a).Lte(b));
+                    BigTests.IsTrue(bigFactory.Big(a).Gt(b));
+                    BigTests.IsTrue(bigFactory.Big(a).Gte(b));
+                    BigTests.IsTrue(!bigFactory.Big(a).Eq(b));
+                    BigTests.IsTrue(!bigFactory.Big(a).Lt(b));
+                    BigTests.IsTrue(!bigFactory.Big(a).Lte(b));
                 }
                 else if (expected == -1)
                 {
-                    BigTests.IsTrue(new Big(a).Lt(b));
-                    BigTests.IsTrue(new Big(a).Lte(b));
-                    BigTests.IsTrue(!new Big(a).Eq(b));
-                    BigTests.IsTrue(!new Big(a).Gt(b));
-                    BigTests.IsTrue(!new Big(a).Gte(b));
+                    BigTests.IsTrue(bigFactory.Big(a).Lt(b));
+                    BigTests.IsTrue(bigFactory.Big(a).Lte(b));
+                    BigTests.IsTrue(!bigFactory.Big(a).Eq(b));
+                    BigTests.IsTrue(!bigFactory.Big(a).Gt(b));
+                    BigTests.IsTrue(!bigFactory.Big(a).Gte(b));
                 }
                 else if (expected == 0)
                 {
-                    BigTests.IsTrue(new Big(a).Eq(b));
-                    BigTests.IsTrue(new Big(a).Gte(b));
-                    BigTests.IsTrue(new Big(a).Lte(b));
-                    BigTests.IsTrue(!new Big(a).Lt(b));
-                    BigTests.IsTrue(!new Big(a).Gt(b));
+                    BigTests.IsTrue(bigFactory.Big(a).Eq(b));
+                    BigTests.IsTrue(bigFactory.Big(a).Gte(b));
+                    BigTests.IsTrue(bigFactory.Big(a).Lte(b));
+                    BigTests.IsTrue(!bigFactory.Big(a).Lt(b));
+                    BigTests.IsTrue(!bigFactory.Big(a).Gt(b));
                 }
             };
 
-            Big.DP = 20;
-            Big.RM = RoundingMode.ROUND_HALF_UP;
+            bigFactory.Config.DP = 20;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
 
-            var n = new Big(1);
+            var n = bigFactory.Big(1);
             BigTests.IsTrue(n.Eq(n));
             BigTests.IsTrue(n.Eq(1));
             BigTests.IsTrue(n.Eq("1.0"));
             BigTests.IsTrue(n.Eq("1.000000"));
-            BigTests.IsTrue(n.Eq(new Big(1)));
+            BigTests.IsTrue(n.Eq(bigFactory.Big(1)));
             BigTests.IsTrue(n.Gt(0.99999));
             BigTests.IsTrue(!n.Gte(1.1));
             BigTests.IsTrue(n.Lt(1.001));
             BigTests.IsTrue(n.Lte(2));
 
-            n = new Big("-0.1");
+            n = bigFactory.Big("-0.1");
             BigTests.IsTrue(!n.Eq(0.1));
             BigTests.IsTrue(!n.Gt(-0.1));
             BigTests.IsTrue(n.Gte(-1));
             BigTests.IsTrue(n.Lt(-0.01));
             BigTests.IsTrue(!n.Lte(-1));
 
-            n = new Big("0.0000000");
+            n = bigFactory.Big("0.0000000");
             BigTests.IsTrue(n.Eq(-0));
             BigTests.IsTrue(n.Gt(-0.000001));
             BigTests.IsTrue(!n.Gte(0.1));
             BigTests.IsTrue(n.Lt(0.0001));
             BigTests.IsTrue(n.Lte(-0));
 
-            n = new Big(-0);
+            n = bigFactory.Big("-0");
             BigTests.IsTrue(n.Eq("0.000"));
             BigTests.IsTrue(n.Gt(-1));
             BigTests.IsTrue(!n.Gte(0.1));
@@ -98,20 +94,20 @@ namespace BigSharp.Tests
             BigTests.IsTrue(n.Lt(0.1));
             BigTests.IsTrue(n.Lte(0));
 
-            n = new Big("-1.234e+2");
+            n = bigFactory.Big("-1.234e+2");
             BigTests.IsTrue(n.Eq(-123.4));
             BigTests.IsTrue(n.Gte("-1.234e+3"));
             BigTests.IsTrue(n.Lt(-123.39999));
             BigTests.IsTrue(n.Lte("-123.4e+0"));
 
-            n = new Big("5e-200");
+            n = bigFactory.Big("5e-200");
             BigTests.IsTrue(n.Eq(5e-200));
             BigTests.IsTrue(n.Gt(5e-201));
             BigTests.IsTrue(!n.Gte(1));
             BigTests.IsTrue(n.Lt(6e-200));
             BigTests.IsTrue(n.Lte(5.1e-200));
 
-            n = new Big("1");
+            n = bigFactory.Big("1");
             BigTests.IsTrue(n.Eq(n));
             BigTests.IsTrue(n.Eq(n.ToString()));
             BigTests.IsTrue(n.Eq(n.ValueOf()));
@@ -121,51 +117,51 @@ namespace BigSharp.Tests
             BigTests.IsTrue(!n.Eq(-1));
             BigTests.IsTrue(!n.Eq(0.1));
 
-            BigTests.IsTrue(!new Big(0.1).Eq(0));
-            BigTests.IsTrue(!new Big(1e9 + 1).Eq(1e9));
-            BigTests.IsTrue(!new Big(1e9 - 1).Eq(1e9));
-            BigTests.IsTrue(new Big(1e9 + 1).Eq(1e9 + 1));
-            BigTests.IsTrue(new Big(1).Eq(1));
-            BigTests.IsTrue(!new Big(1).Eq(-1));
+            BigTests.IsTrue(!bigFactory.Big(0.1).Eq(0));
+            BigTests.IsTrue(!bigFactory.Big(1e9 + 1).Eq(1e9));
+            BigTests.IsTrue(!bigFactory.Big(1e9 - 1).Eq(1e9));
+            BigTests.IsTrue(bigFactory.Big(1e9 + 1).Eq(1e9 + 1));
+            BigTests.IsTrue(bigFactory.Big(1).Eq(1));
+            BigTests.IsTrue(!bigFactory.Big(1).Eq(-1));
 
-            BigTests.IsTrue(!new Big(1.23001e-2).Lt(1.23e-2));
-            BigTests.IsTrue(new Big(1.23e-2).Lt(1.23001e-2));
-            BigTests.IsTrue(!new Big(1e-2).Lt(9.999999e-3));
-            BigTests.IsTrue(new Big(9.999999e-3).Lt(1e-2));
-            BigTests.IsTrue(!new Big(1.23001e+2).Lt(1.23e+2));
-            BigTests.IsTrue(new Big(1.23e+2).Lt(1.23001e+2));
-            BigTests.IsTrue(new Big(9.999999e+2).Lt(1e+3));
-            BigTests.IsTrue(!new Big(1e+3).Lt(9.9999999e+2));
+            BigTests.IsTrue(!bigFactory.Big(1.23001e-2).Lt(1.23e-2));
+            BigTests.IsTrue(bigFactory.Big(1.23e-2).Lt(1.23001e-2));
+            BigTests.IsTrue(!bigFactory.Big(1e-2).Lt(9.999999e-3));
+            BigTests.IsTrue(bigFactory.Big(9.999999e-3).Lt(1e-2));
+            BigTests.IsTrue(!bigFactory.Big(1.23001e+2).Lt(1.23e+2));
+            BigTests.IsTrue(bigFactory.Big(1.23e+2).Lt(1.23001e+2));
+            BigTests.IsTrue(bigFactory.Big(9.999999e+2).Lt(1e+3));
+            BigTests.IsTrue(!bigFactory.Big(1e+3).Lt(9.9999999e+2));
 
-            BigTests.IsTrue(!new Big(1.23001e-2).Lte(1.23e-2));
-            BigTests.IsTrue(new Big(1.23e-2).Lte(1.23001e-2));
-            BigTests.IsTrue(!new Big(1e-2).Lte(9.999999e-3));
-            BigTests.IsTrue(new Big(9.999999e-3).Lte(1e-2));
+            BigTests.IsTrue(!bigFactory.Big(1.23001e-2).Lte(1.23e-2));
+            BigTests.IsTrue(bigFactory.Big(1.23e-2).Lte(1.23001e-2));
+            BigTests.IsTrue(!bigFactory.Big(1e-2).Lte(9.999999e-3));
+            BigTests.IsTrue(bigFactory.Big(9.999999e-3).Lte(1e-2));
 
-            BigTests.IsTrue(!new Big(1.23001e+2).Lte(1.23e+2));
-            BigTests.IsTrue(new Big(1.23e+2).Lte(1.23001e+2));
-            BigTests.IsTrue(new Big(9.999999e+2).Lte(1e+3));
-            BigTests.IsTrue(!new Big(1e+3).Lte(9.9999999e+2));
+            BigTests.IsTrue(!bigFactory.Big(1.23001e+2).Lte(1.23e+2));
+            BigTests.IsTrue(bigFactory.Big(1.23e+2).Lte(1.23001e+2));
+            BigTests.IsTrue(bigFactory.Big(9.999999e+2).Lte(1e+3));
+            BigTests.IsTrue(!bigFactory.Big(1e+3).Lte(9.9999999e+2));
 
-            BigTests.IsTrue(new Big(1.23001e-2).Gt(1.23e-2));
-            BigTests.IsTrue(!new Big(1.23e-2).Gt(1.23001e-2));
-            BigTests.IsTrue(new Big(1e-2).Gt(9.999999e-3));
-            BigTests.IsTrue(!new Big(9.999999e-3).Gt(1e-2));
+            BigTests.IsTrue(bigFactory.Big(1.23001e-2).Gt(1.23e-2));
+            BigTests.IsTrue(!bigFactory.Big(1.23e-2).Gt(1.23001e-2));
+            BigTests.IsTrue(bigFactory.Big(1e-2).Gt(9.999999e-3));
+            BigTests.IsTrue(!bigFactory.Big(9.999999e-3).Gt(1e-2));
 
-            BigTests.IsTrue(new Big(1.23001e+2).Gt(1.23e+2));
-            BigTests.IsTrue(!new Big(1.23e+2).Gt(1.23001e+2));
-            BigTests.IsTrue(!new Big(9.999999e+2).Gt(1e+3));
-            BigTests.IsTrue(new Big(1e+3).Gt(9.9999999e+2));
+            BigTests.IsTrue(bigFactory.Big(1.23001e+2).Gt(1.23e+2));
+            BigTests.IsTrue(!bigFactory.Big(1.23e+2).Gt(1.23001e+2));
+            BigTests.IsTrue(!bigFactory.Big(9.999999e+2).Gt(1e+3));
+            BigTests.IsTrue(bigFactory.Big(1e+3).Gt(9.9999999e+2));
 
-            BigTests.IsTrue(new Big(1.23001e-2).Gte(1.23e-2));
-            BigTests.IsTrue(!new Big(1.23e-2).Gte(1.23001e-2));
-            BigTests.IsTrue(new Big(1e-2).Gte(9.999999e-3));
-            BigTests.IsTrue(!new Big(9.999999e-3).Gte(1e-2));
+            BigTests.IsTrue(bigFactory.Big(1.23001e-2).Gte(1.23e-2));
+            BigTests.IsTrue(!bigFactory.Big(1.23e-2).Gte(1.23001e-2));
+            BigTests.IsTrue(bigFactory.Big(1e-2).Gte(9.999999e-3));
+            BigTests.IsTrue(!bigFactory.Big(9.999999e-3).Gte(1e-2));
 
-            BigTests.IsTrue(new Big(1.23001e+2).Gte(1.23e+2));
-            BigTests.IsTrue(!new Big(1.23e+2).Gte(1.23001e+2));
-            BigTests.IsTrue(!new Big(9.999999e+2).Gte(1e+3));
-            BigTests.IsTrue(new Big(1e+3).Gte(9.9999999e+2));
+            BigTests.IsTrue(bigFactory.Big(1.23001e+2).Gte(1.23e+2));
+            BigTests.IsTrue(!bigFactory.Big(1.23e+2).Gte(1.23001e+2));
+            BigTests.IsTrue(!bigFactory.Big(9.999999e+2).Gte(1e+3));
+            BigTests.IsTrue(bigFactory.Big(1e+3).Gte(9.9999999e+2));
 
             t(1, 0, 1);
             t(1, -0, 1);
@@ -4129,124 +4125,124 @@ namespace BigSharp.Tests
             t("-0.10021507", "-2049541544645617700923988306", 1);
             t("6609143733354158875894", "-6609143733354158875894", 1);
 
-            BigTests.IsException(() => { new Big("12.345").Eq((Big)null); }, ".eq(null)");
-            BigTests.IsException(() => { new Big("12.345").Eq((string)null); }, ".eq(null)");
-            BigTests.IsException(() => { new Big("12.345").Eq(""); }, ".eq('')");
-            BigTests.IsException(() => { new Big("12.345").Eq(" "); }, ".eq(' ')");
-            BigTests.IsException(() => { new Big("12.345").Eq("hello"); }, ".eq('hello')");
-            BigTests.IsException(() => { new Big("12.345").Eq("\t"); }, ".eq('\t')");
-            BigTests.IsException(() => { new Big("12.345").Eq(" 0.1"); }, ".eq(' 0.1')");
-            BigTests.IsException(() => { new Big("12.345").Eq("7.5 "); }, ".eq('7.5 ')");
-            BigTests.IsException(() => { new Big("12.345").Eq(" 0 "); }, ".eq(' 0 ')");
-            BigTests.IsException(() => { new Big("12.345").Eq("+1"); }, ".eq('+1')");
-            BigTests.IsException(() => { new Big("12.345").Eq(" +1.2"); }, ".eq(' +1.2')");
-            BigTests.IsException(() => { new Big("12.345").Eq("- 99"); }, ".eq('- 99')");
-            BigTests.IsException(() => { new Big("12.345").Eq("9.9.9"); }, ".eq('9.9.9')");
-            BigTests.IsException(() => { new Big("12.345").Eq("10.1.0"); }, ".eq('10.1.0')");
-            BigTests.IsException(() => { new Big("12.345").Eq("0x16"); }, ".eq('0x16')");
-            BigTests.IsException(() => { new Big("12.345").Eq("1e"); }, ".eq('1e')");
-            BigTests.IsException(() => { new Big("12.345").Eq("8 e"); }, ".eq('8 e')");
-            BigTests.IsException(() => { new Big("12.345").Eq("77-e"); }, ".eq('77-e')");
-            BigTests.IsException(() => { new Big("12.345").Eq("123e.0"); }, ".eq('123e.0')");
-            BigTests.IsException(() => { new Big("12.345").Eq("4e1."); }, ".eq('4e1.')");
-            BigTests.IsException(() => { new Big("12.345").Eq(double.PositiveInfinity); }, ".eq(Infinity)");
-            BigTests.IsException(() => { new Big("12.345").Eq(double.NegativeInfinity); }, ".eq(-Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq((Big)null); }, ".eq(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq((string)null); }, ".eq(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq(""); }, ".eq('')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq(" "); }, ".eq(' ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("hello"); }, ".eq('hello')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("\t"); }, ".eq('\t')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq(" 0.1"); }, ".eq(' 0.1')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("7.5 "); }, ".eq('7.5 ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq(" 0 "); }, ".eq(' 0 ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("+1"); }, ".eq('+1')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq(" +1.2"); }, ".eq(' +1.2')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("- 99"); }, ".eq('- 99')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("9.9.9"); }, ".eq('9.9.9')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("10.1.0"); }, ".eq('10.1.0')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("0x16"); }, ".eq('0x16')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("1e"); }, ".eq('1e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("8 e"); }, ".eq('8 e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("77-e"); }, ".eq('77-e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("123e.0"); }, ".eq('123e.0')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq("4e1."); }, ".eq('4e1.')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq(double.PositiveInfinity); }, ".eq(Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Eq(double.NegativeInfinity); }, ".eq(-Infinity)");
 
-            BigTests.IsException(() => { new Big("0").Gt((Big)null); }, ".gt(null)");
-            BigTests.IsException(() => { new Big("0").Gt((string)null); }, ".gt(null)");
-            BigTests.IsException(() => { new Big("0").Gt("NaN"); }, ".gt('NaN')");
-            BigTests.IsException(() => { new Big("0").Gt(""); }, ".gt('')");
-            BigTests.IsException(() => { new Big("0").Gt(" "); }, ".gt(' ')");
-            BigTests.IsException(() => { new Big("0").Gt("hello"); }, ".gt('hello')");
-            BigTests.IsException(() => { new Big("0").Gt("\t"); }, ".gt('\t')");
-            BigTests.IsException(() => { new Big("0").Gt(" 0.1"); }, ".gt(' 0.1')");
-            BigTests.IsException(() => { new Big("0").Gt("7.5 "); }, ".gt('7.5 ')");
-            BigTests.IsException(() => { new Big("0").Gt(" 0 "); }, ".gt(' 0 ')");
-            BigTests.IsException(() => { new Big("0").Gt("+1"); }, ".gt('+1')");
-            BigTests.IsException(() => { new Big("0").Gt(" +1.2"); }, ".gt(' +1.2')");
-            BigTests.IsException(() => { new Big("0").Gt("- 99"); }, ".gt('- 99')");
-            BigTests.IsException(() => { new Big("0").Gt("9.9.9"); }, ".gt('9.9.9')");
-            BigTests.IsException(() => { new Big("0").Gt("10.1.0"); }, ".gt('10.1.0')");
-            BigTests.IsException(() => { new Big("0").Gt("0x16"); }, ".gt('0x16')");
-            BigTests.IsException(() => { new Big("0").Gt("1e"); }, ".gt('1e')");
-            BigTests.IsException(() => { new Big("0").Gt("8 e"); }, ".gt('8 e')");
-            BigTests.IsException(() => { new Big("0").Gt("77-e"); }, ".gt('77-e')");
-            BigTests.IsException(() => { new Big("0").Gt("123e.0"); }, ".gt('123e.0')");
-            BigTests.IsException(() => { new Big("0").Gt("4e1."); }, ".gt('4e1.')");
-            BigTests.IsException(() => { new Big("0").Gt(double.PositiveInfinity); }, ".gt(Infinity)");
-            BigTests.IsException(() => { new Big("0").Gt(double.NegativeInfinity); }, ".gt(-Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt((Big)null); }, ".gt(null)");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt((string)null); }, ".gt(null)");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("NaN"); }, ".gt('NaN')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt(""); }, ".gt('')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt(" "); }, ".gt(' ')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("hello"); }, ".gt('hello')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("\t"); }, ".gt('\t')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt(" 0.1"); }, ".gt(' 0.1')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("7.5 "); }, ".gt('7.5 ')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt(" 0 "); }, ".gt(' 0 ')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("+1"); }, ".gt('+1')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt(" +1.2"); }, ".gt(' +1.2')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("- 99"); }, ".gt('- 99')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("9.9.9"); }, ".gt('9.9.9')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("10.1.0"); }, ".gt('10.1.0')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("0x16"); }, ".gt('0x16')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("1e"); }, ".gt('1e')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("8 e"); }, ".gt('8 e')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("77-e"); }, ".gt('77-e')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("123e.0"); }, ".gt('123e.0')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt("4e1."); }, ".gt('4e1.')");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt(double.PositiveInfinity); }, ".gt(Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("0").Gt(double.NegativeInfinity); }, ".gt(-Infinity)");
 
-            BigTests.IsException(() => { new Big("9.9900E2").Gte((Big)null); }, ".gte(null)");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte((string)null); }, ".gte(null)");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("NaN"); }, ".gte('NaN')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte(""); }, ".gte('')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte(" "); }, ".gte(' ')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("hello"); }, ".gte('hello')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("\t"); }, ".gte('\t')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte(" 0.1"); }, ".gte(' 0.1')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("7.5 "); }, ".gte('7.5 ')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte(" 0 "); }, ".gte(' 0 ')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("+1"); }, ".gte('+1')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte(" +1.2"); }, ".gte(' +1.2')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("- 99"); }, ".gte('- 99')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("9.9.9"); }, ".gte('9.9.9')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("10.1.0"); }, ".gte('10.1.0')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("0x16"); }, ".gte('0x16')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("1e"); }, ".gte('1e')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("8 e"); }, ".gte('8 e')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("77-e"); }, ".gte('77-e')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("123e.0"); }, ".gte('123e.0')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte("4e1."); }, ".gte('4e1.')");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte(double.PositiveInfinity); }, ".gte(Infinity)");
-            BigTests.IsException(() => { new Big("9.9900E2").Gte(double.NegativeInfinity); }, ".gte(-Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte((Big)null); }, ".gte(null)");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte((string)null); }, ".gte(null)");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("NaN"); }, ".gte('NaN')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte(""); }, ".gte('')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte(" "); }, ".gte(' ')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("hello"); }, ".gte('hello')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("\t"); }, ".gte('\t')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte(" 0.1"); }, ".gte(' 0.1')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("7.5 "); }, ".gte('7.5 ')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte(" 0 "); }, ".gte(' 0 ')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("+1"); }, ".gte('+1')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte(" +1.2"); }, ".gte(' +1.2')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("- 99"); }, ".gte('- 99')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("9.9.9"); }, ".gte('9.9.9')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("10.1.0"); }, ".gte('10.1.0')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("0x16"); }, ".gte('0x16')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("1e"); }, ".gte('1e')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("8 e"); }, ".gte('8 e')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("77-e"); }, ".gte('77-e')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("123e.0"); }, ".gte('123e.0')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte("4e1."); }, ".gte('4e1.')");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte(double.PositiveInfinity); }, ".gte(Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("9.9900E2").Gte(double.NegativeInfinity); }, ".gte(-Infinity)");
 
-            BigTests.IsException(() => { new Big("12.345").Lt((Big)null); }, ".lt(null)");
-            BigTests.IsException(() => { new Big("12.345").Lt((string)null); }, ".lt(null)");
-            BigTests.IsException(() => { new Big("12.345").Lt("NaN"); }, ".lt('NaN')");
-            BigTests.IsException(() => { new Big("12.345").Lt(""); }, ".lt('')");
-            BigTests.IsException(() => { new Big("12.345").Lt(" "); }, ".lt(' ')");
-            BigTests.IsException(() => { new Big("12.345").Lt("hello"); }, ".lt('hello')");
-            BigTests.IsException(() => { new Big("12.345").Lt("\t"); }, ".lt('\t')");
-            BigTests.IsException(() => { new Big("12.345").Lt(" 0.1"); }, ".lt(' 0.1')");
-            BigTests.IsException(() => { new Big("12.345").Lt("7.5 "); }, ".lt('7.5 ')");
-            BigTests.IsException(() => { new Big("12.345").Lt(" 0 "); }, ".lt(' 0 ')");
-            BigTests.IsException(() => { new Big("12.345").Lt("+1"); }, ".lt('+1')");
-            BigTests.IsException(() => { new Big("12.345").Lt(" +1.2"); }, ".lt(' +1.2')");
-            BigTests.IsException(() => { new Big("12.345").Lt("- 99"); }, ".lt('- 99')");
-            BigTests.IsException(() => { new Big("12.345").Lt("9.9.9"); }, ".lt('9.9.9')");
-            BigTests.IsException(() => { new Big("12.345").Lt("10.1.0"); }, ".lt('10.1.0')");
-            BigTests.IsException(() => { new Big("12.345").Lt("0x16"); }, ".lt('0x16')");
-            BigTests.IsException(() => { new Big("12.345").Lt("1e"); }, ".lt('1e')");
-            BigTests.IsException(() => { new Big("12.345").Lt("8 e"); }, ".lt('8 e')");
-            BigTests.IsException(() => { new Big("12.345").Lt("77-e"); }, ".lt('77-e')");
-            BigTests.IsException(() => { new Big("12.345").Lt("123e.0"); }, ".lt('123e.0')");
-            BigTests.IsException(() => { new Big("12.345").Lt("4e1."); }, ".lt('4e1.')");
-            BigTests.IsException(() => { new Big("12.345").Lt(double.PositiveInfinity); }, ".lt(Infinity)");
-            BigTests.IsException(() => { new Big("12.345").Lt(double.NegativeInfinity); }, ".lt(-Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt((Big)null); }, ".lt(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt((string)null); }, ".lt(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("NaN"); }, ".lt('NaN')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt(""); }, ".lt('')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt(" "); }, ".lt(' ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("hello"); }, ".lt('hello')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("\t"); }, ".lt('\t')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt(" 0.1"); }, ".lt(' 0.1')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("7.5 "); }, ".lt('7.5 ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt(" 0 "); }, ".lt(' 0 ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("+1"); }, ".lt('+1')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt(" +1.2"); }, ".lt(' +1.2')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("- 99"); }, ".lt('- 99')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("9.9.9"); }, ".lt('9.9.9')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("10.1.0"); }, ".lt('10.1.0')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("0x16"); }, ".lt('0x16')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("1e"); }, ".lt('1e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("8 e"); }, ".lt('8 e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("77-e"); }, ".lt('77-e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("123e.0"); }, ".lt('123e.0')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt("4e1."); }, ".lt('4e1.')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt(double.PositiveInfinity); }, ".lt(Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lt(double.NegativeInfinity); }, ".lt(-Infinity)");
 
-            BigTests.IsException(() => { new Big("12.345").Lte((Big)null); }, ".lte(null)");
-            BigTests.IsException(() => { new Big("12.345").Lte((string)null); }, ".lte(null)");
-            BigTests.IsException(() => { new Big("12.345").Lte("NaN"); }, ".lte('NaN')");
-            BigTests.IsException(() => { new Big("12.345").Lte(""); }, ".lte('')");
-            BigTests.IsException(() => { new Big("12.345").Lte(" "); }, ".lte(' ')");
-            BigTests.IsException(() => { new Big("12.345").Lte("hello"); }, ".lte('hello')");
-            BigTests.IsException(() => { new Big("12.345").Lte("\t"); }, ".lte('\t')");
-            BigTests.IsException(() => { new Big("12.345").Lte(" 0.1"); }, ".lte(' 0.1')");
-            BigTests.IsException(() => { new Big("12.345").Lte("7.5 "); }, ".lte('7.5 ')");
-            BigTests.IsException(() => { new Big("12.345").Lte(" 0 "); }, ".lte(' 0 ')");
-            BigTests.IsException(() => { new Big("12.345").Lte("+1"); }, ".lte('+1')");
-            BigTests.IsException(() => { new Big("12.345").Lte(" +1.2"); }, ".lte(' +1.2')");
-            BigTests.IsException(() => { new Big("12.345").Lte("- 99"); }, ".lte('- 99')");
-            BigTests.IsException(() => { new Big("12.345").Lte("9.9.9"); }, ".lte('9.9.9')");
-            BigTests.IsException(() => { new Big("12.345").Lte("10.1.0"); }, ".lte('10.1.0')");
-            BigTests.IsException(() => { new Big("12.345").Lte("0x16"); }, ".lte('0x16')");
-            BigTests.IsException(() => { new Big("12.345").Lte("1e"); }, ".lte('1e')");
-            BigTests.IsException(() => { new Big("12.345").Lte("8 e"); }, ".lte('8 e')");
-            BigTests.IsException(() => { new Big("12.345").Lte("77-e"); }, ".lte('77-e')");
-            BigTests.IsException(() => { new Big("12.345").Lte("123e.0"); }, ".lte('123e.0')");
-            BigTests.IsException(() => { new Big("12.345").Lte("4e1."); }, ".lte('4e1.')");
-            BigTests.IsException(() => { new Big("12.345").Lte(double.PositiveInfinity); }, ".lte(Infinity)");
-            BigTests.IsException(() => { new Big("12.345").Lte(double.NegativeInfinity); }, ".lte(-Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte((Big)null); }, ".lte(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte((string)null); }, ".lte(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("NaN"); }, ".lte('NaN')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte(""); }, ".lte('')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte(" "); }, ".lte(' ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("hello"); }, ".lte('hello')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("\t"); }, ".lte('\t')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte(" 0.1"); }, ".lte(' 0.1')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("7.5 "); }, ".lte('7.5 ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte(" 0 "); }, ".lte(' 0 ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("+1"); }, ".lte('+1')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte(" +1.2"); }, ".lte(' +1.2')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("- 99"); }, ".lte('- 99')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("9.9.9"); }, ".lte('9.9.9')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("10.1.0"); }, ".lte('10.1.0')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("0x16"); }, ".lte('0x16')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("1e"); }, ".lte('1e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("8 e"); }, ".lte('8 e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("77-e"); }, ".lte('77-e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("123e.0"); }, ".lte('123e.0')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte("4e1."); }, ".lte('4e1.')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte(double.PositiveInfinity); }, ".lte(Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Lte(double.NegativeInfinity); }, ".lte(-Infinity)");
 
             Assert.Pass();
         }

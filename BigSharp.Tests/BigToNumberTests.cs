@@ -1,5 +1,4 @@
-﻿using BigSharp.Tests.Extensions;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace BigSharp.Tests
 {
@@ -14,18 +13,16 @@ namespace BigSharp.Tests
         [Test]
         public void ToNumber()
         {
-            Big.NE = -7;
-            Big.PE = 21;
-            Big.STRICT = false;
-
-            var t = (object value0) =>
+            var bigFactory = new BigFactory(new BigConfig()
             {
-                Big? value = value0.ToBig();
+                NE = -7,
+                PE = 21,
+                STRICT = false
+            });
 
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.IsTrue(1 / new Big(value).ToNumber() == double.PositiveInfinity);
+            var t = (BigArgument value) =>
+            {
+                BigTests.IsTrue(1 / bigFactory.Big(value).ToNumber() == double.PositiveInfinity);
             };
 
             t(0);
@@ -36,14 +33,9 @@ namespace BigSharp.Tests
             t("0e-0");
 
             // Negative zero
-            t = (object value0) =>
+            t = (BigArgument value) =>
             {
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.IsTrue(1 / new Big(value).ToNumber() == double.NegativeInfinity);
+                BigTests.IsTrue(1 / bigFactory.Big(value).ToNumber() == double.NegativeInfinity);
             };
 
             t("-0");
@@ -52,14 +44,9 @@ namespace BigSharp.Tests
             t("-0e+0");
             t("-0e-0");
 
-            var t2 = (object value0, double expected0) =>
+            var t2 = (BigArgument value, double expected0) =>
             {
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(new Big(value).ToNumber(), expected0);
+                BigTests.AreEqual(bigFactory.Big(value).ToNumber(), expected0);
             };
 
             t2(0, 0);
@@ -102,13 +89,13 @@ namespace BigSharp.Tests
 
             t2(n, 1);
 
-            Big.STRICT = true;
+            bigFactory.Config.STRICT = true;
 
-            BigTests.IsException(() => { new Big(n).ToNumber(); }, "new Big(n).toNumber()");
+            BigTests.IsException(() => { bigFactory.Big(n).ToNumber(); }, "bigFactory.Big(n).toNumber()");
 
-            BigTests.IsException(() => { new Big(0).ToNumber(); }, "new Big(0).toNumber()");
-            BigTests.IsException(() => { new Big(1).ToNumber(); }, "new Big(1).toNumber()");
-            BigTests.IsException(() => { new Big(-1).ToNumber(); }, "new Big(-1).toNumber()");
+            BigTests.IsException(() => { bigFactory.Big(0).ToNumber(); }, "bigFactory.Big(0).toNumber()");
+            BigTests.IsException(() => { bigFactory.Big(1).ToNumber(); }, "bigFactory.Big(1).toNumber()");
+            BigTests.IsException(() => { bigFactory.Big(-1).ToNumber(); }, "bigFactory.Big(-1).toNumber()");
 
             t2("0", 0);
             t2("-0", -0);
@@ -137,7 +124,7 @@ namespace BigSharp.Tests
             t2("123.456789", 123.456789);
             t2("1.23456789876543", 1.23456789876543);
 
-            Big.STRICT = false;
+            bigFactory.Config.STRICT = false;
 
             Assert.Pass();
         }

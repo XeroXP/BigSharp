@@ -14,31 +14,27 @@ namespace BigSharp.Tests
         [Test]
         public void Times()
         {
-            var t = (object multiplicand0, object multiplier0, object expected0) =>
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (BigArgument multiplicand, BigArgument multiplier, object expected0) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? multiplicand = multiplicand0.ToBig();
-                Big? multiplier = multiplier0.ToBig();
-
-                if (multiplicand == null || multiplier == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(multiplicand).Times(multiplier).ToString());
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(multiplicand).Times(multiplier).ToString());
             };
 
-            BigTests.IsPositiveZero((new Big(1).Times(0)));
-            BigTests.IsNegativeZero((new Big(1).Times("-0")));
-            BigTests.IsNegativeZero((new Big(-1).Times(0)));
-            BigTests.IsPositiveZero((new Big(-1).Times("-0")));
-            BigTests.IsPositiveZero((new Big(0).Times(1)));
-            BigTests.IsNegativeZero((new Big(0).Times(-1)));
-            BigTests.IsNegativeZero((new Big("-0").Times(1)));
-            BigTests.IsPositiveZero((new Big("-0").Times(-1)));
-            BigTests.IsPositiveZero((new Big(0).Times(0)));
-            BigTests.IsNegativeZero((new Big(0).Times("-0")));
-            BigTests.IsNegativeZero((new Big("-0").Times(0)));
-            BigTests.IsPositiveZero((new Big("-0").Times("-0")));
+            BigTests.IsPositiveZero((bigFactory.Big(1).Times(0)));
+            BigTests.IsNegativeZero((bigFactory.Big(1).Times("-0")));
+            BigTests.IsNegativeZero((bigFactory.Big(-1).Times(0)));
+            BigTests.IsPositiveZero((bigFactory.Big(-1).Times("-0")));
+            BigTests.IsPositiveZero((bigFactory.Big(0).Times(1)));
+            BigTests.IsNegativeZero((bigFactory.Big(0).Times(-1)));
+            BigTests.IsNegativeZero((bigFactory.Big("-0").Times(1)));
+            BigTests.IsPositiveZero((bigFactory.Big("-0").Times(-1)));
+            BigTests.IsPositiveZero((bigFactory.Big(0).Times(0)));
+            BigTests.IsNegativeZero((bigFactory.Big(0).Times("-0")));
+            BigTests.IsNegativeZero((bigFactory.Big("-0").Times(0)));
+            BigTests.IsPositiveZero((bigFactory.Big("-0").Times("-0")));
 
             t(1, "1", "1");
             t(1, "-45", "-45");
@@ -2093,29 +2089,29 @@ namespace BigSharp.Tests
             t("8.944326872147001036632309667E-41", "1.34989853214019743744001484188796117541380712420727841534671603347856989127834147166127622e+48", "120739337.1569336009465330585026690676314127638673504378646869299090176172459431821906069831664699038568059542346321874");
             t("-1.06387569312217787644613114942E-25", "-3.49651047707433733724368394353972842316097364325909366154237667988339210449181953609691895611E35", "37198525073.064174722364904333744771229085129180022174384101305415837978911883846550330098510374779170577866567699408319562");
 
-            BigTests.IsException(() => { new Big("1").Times((Big)null); }, ".times(null)");
-            BigTests.IsException(() => { new Big("1").Times((string)null); }, ".times(null)");
-            BigTests.IsException(() => { new Big("1").Times("NaN"); }, ".times('NaN')");
-            BigTests.IsException(() => { new Big("1").Times(""); }, ".times('')");
-            BigTests.IsException(() => { new Big("1").Times(" "); }, ".times(' ')");
-            BigTests.IsException(() => { new Big("1").Times("hello"); }, ".times('hello')");
-            BigTests.IsException(() => { new Big("1").Times("\t"); }, ".times('\t')");
-            BigTests.IsException(() => { new Big("1").Times(" 0.1"); }, ".times(' 0.1')");
-            BigTests.IsException(() => { new Big("1").Times("7.5 "); }, ".times('7.5 ')");
-            BigTests.IsException(() => { new Big("1").Times(" 0 "); }, ".times(' 0 ')");
-            BigTests.IsException(() => { new Big("1").Times("+1"); }, ".times('+1')");
-            BigTests.IsException(() => { new Big("1").Times(" +1.2"); }, ".times(' +1.2')");
-            BigTests.IsException(() => { new Big("1").Times("- 99"); }, ".times('- 99')");
-            BigTests.IsException(() => { new Big("1").Times("9.9.9"); }, ".times('9.9.9')");
-            BigTests.IsException(() => { new Big("1").Times("10.1.0"); }, ".times('10.1.0')");
-            BigTests.IsException(() => { new Big("1").Times("0x16"); }, ".times('0x16')");
-            BigTests.IsException(() => { new Big("1").Times("1e"); }, ".times('1e')");
-            BigTests.IsException(() => { new Big("1").Times("8 e"); }, ".times('8 e')");
-            BigTests.IsException(() => { new Big("1").Times("77-e"); }, ".times('77-e')");
-            BigTests.IsException(() => { new Big("1").Times("123e.0"); }, ".times('123e.0')");
-            BigTests.IsException(() => { new Big("1").Times("4e1."); }, ".times('4e1.')");
-            BigTests.IsException(() => { new Big("1").Times(double.PositiveInfinity); }, ".times(Infinity)");
-            BigTests.IsException(() => { new Big("1").Times(double.NegativeInfinity); }, ".times(-Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("1").Times((Big)null); }, ".times(null)");
+            BigTests.IsException(() => { bigFactory.Big("1").Times((string)null); }, ".times(null)");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("NaN"); }, ".times('NaN')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times(""); }, ".times('')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times(" "); }, ".times(' ')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("hello"); }, ".times('hello')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("\t"); }, ".times('\t')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times(" 0.1"); }, ".times(' 0.1')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("7.5 "); }, ".times('7.5 ')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times(" 0 "); }, ".times(' 0 ')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("+1"); }, ".times('+1')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times(" +1.2"); }, ".times(' +1.2')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("- 99"); }, ".times('- 99')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("9.9.9"); }, ".times('9.9.9')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("10.1.0"); }, ".times('10.1.0')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("0x16"); }, ".times('0x16')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("1e"); }, ".times('1e')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("8 e"); }, ".times('8 e')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("77-e"); }, ".times('77-e')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("123e.0"); }, ".times('123e.0')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times("4e1."); }, ".times('4e1.')");
+            BigTests.IsException(() => { bigFactory.Big("1").Times(double.PositiveInfinity); }, ".times(Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("1").Times(double.NegativeInfinity); }, ".times(-Infinity)");
 
             Assert.Pass();
         }

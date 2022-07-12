@@ -14,27 +14,23 @@ namespace BigSharp.Tests
         [Test]
         public void Mod()
         {
-            var t = (object a0, object b0, object expected0) =>
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (BigArgument a, BigArgument b, object expected0) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? a = a0.ToBig();
-                Big? b = b0.ToBig();
-
-                if (a == null || b == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(a).Mod(new Big(b)).ToString());
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(a).Mod(bigFactory.Big(b)).ToString());
             };
 
-            Big.DP = 20;
-            Big.RM = RoundingMode.ROUND_UP;
+            bigFactory.Config.DP = 20;
+            bigFactory.Config.RM = RoundingMode.ROUND_UP;
 
-            BigTests.IsPositiveZero((new Big(0).Mod(1)));
-            BigTests.IsPositiveZero((new Big(0).Mod(-1)));
-            BigTests.IsNegativeZero((new Big("-0").Mod(1)));
-            BigTests.IsNegativeZero((new Big("-0").Mod(-1)));
-            BigTests.IsPositiveZero((new Big(1).Mod(1)));
+            BigTests.IsPositiveZero((bigFactory.Big(0).Mod(1)));
+            BigTests.IsPositiveZero((bigFactory.Big(0).Mod(-1)));
+            BigTests.IsNegativeZero((bigFactory.Big("-0").Mod(1)));
+            BigTests.IsNegativeZero((bigFactory.Big("-0").Mod(-1)));
+            BigTests.IsPositiveZero((bigFactory.Big(1).Mod(1)));
             t(1, "-45", "1");
             t(1, "22", "1");
             t(1, 0144, "1");
@@ -51,10 +47,10 @@ namespace BigSharp.Tests
             // match BigDecimal"s remainder method, but not Javascript"s % operator:
             //
             // 1 % -0.1                                 //  0.09999999999999995
-            // new Big(1).mod(-0.1)                     // "0"
+            // bigFactory.Big(1).mod(-0.1)                     // "0"
             //
             // 0.1.toFixed(18)                          // "0.100000000000000006"
-            // new Big(1).mod("-0.100000000000000006")  // "0.099999999999999946"
+            // bigFactory.Big(1).mod("-0.100000000000000006")  // "0.099999999999999946"
 
             t(1, -0.1, "0");               // JS:   0.09999999999999995
             t(-1, -0.1, "0");               // JS:  -0.09999999999999995
@@ -68,13 +64,13 @@ namespace BigSharp.Tests
             t(999.99, "3.01", "0.67");
             t(-999.99, "3.01", "-0.67");
             t(1, "0.09", "0.01");
-            BigTests.IsPositiveZero((new Big(1).Mod("-0.0001")));
-            BigTests.IsNegativeZero((new Big("-0").Mod(1)));
-            BigTests.IsNegativeZero((new Big("-0").Mod(0.1)));
-            BigTests.IsNegativeZero((new Big("-0").Mod("-1")));
+            BigTests.IsPositiveZero((bigFactory.Big(1).Mod("-0.0001")));
+            BigTests.IsNegativeZero((bigFactory.Big("-0").Mod(1)));
+            BigTests.IsNegativeZero((bigFactory.Big("-0").Mod(0.1)));
+            BigTests.IsNegativeZero((bigFactory.Big("-0").Mod("-1")));
             t(1, "8e5", "1");
             t(1, "9E12", "1");
-            BigTests.IsPositiveZero((new Big(1).Mod("1e-14")));
+            BigTests.IsPositiveZero((bigFactory.Big(1).Mod("1e-14")));
             t(1, "-345.43e+4", "1");
             t(1, "-94.12E+0", "1");
             t(0, "0.001", "0");
@@ -1767,36 +1763,36 @@ namespace BigSharp.Tests
             t("1.07984359784457855e+6", "2.92533631912192887348822954567386e+32", "1079843.59784457855");
             t("-5.343344296409307514661858172266262866671109159598323e+9", "2.3273061846552018803169584402231121660442419923712e+8", "-223270690.167863377964549603775416101373776776381683");
 
-            BigTests.IsException(() => { new Big(0).Mod(0); }, ".mod(0)");
-            BigTests.IsException(() => { new Big("-1").Mod(0); }, ".mod(0)");
-            BigTests.IsException(() => { new Big(9).Mod(0); }, ".mod(0)");
-            BigTests.IsException(() => { new Big(9).Mod("0"); }, ".mod('0')");
-            BigTests.IsException(() => { new Big(9).Mod("-0"); }, ".mod('-0')");
-            BigTests.IsException(() => { new Big(9).Mod("0.00"); }, ".mod('0.00')");
+            BigTests.IsException(() => { bigFactory.Big(0).Mod(0); }, ".mod(0)");
+            BigTests.IsException(() => { bigFactory.Big("-1").Mod(0); }, ".mod(0)");
+            BigTests.IsException(() => { bigFactory.Big(9).Mod(0); }, ".mod(0)");
+            BigTests.IsException(() => { bigFactory.Big(9).Mod("0"); }, ".mod('0')");
+            BigTests.IsException(() => { bigFactory.Big(9).Mod("-0"); }, ".mod('-0')");
+            BigTests.IsException(() => { bigFactory.Big(9).Mod("0.00"); }, ".mod('0.00')");
 
-            BigTests.IsException(() => { new Big("12.345").Mod((Big)null); }, ".mod(null)");
-            BigTests.IsException(() => { new Big("12.345").Mod((string)null); }, ".mod(null)");
-            BigTests.IsException(() => { new Big("12.345").Mod("NaN"); }, ".mod('NaN')");
-            BigTests.IsException(() => { new Big("12.345").Mod(""); }, ".mod('')");
-            BigTests.IsException(() => { new Big("12.345").Mod(" "); }, ".mod(' ')");
-            BigTests.IsException(() => { new Big("12.345").Mod("hello"); }, ".mod('hello')");
-            BigTests.IsException(() => { new Big("12.345").Mod("\t"); }, ".mod('\t')");
-            BigTests.IsException(() => { new Big("12.345").Mod(" 0.1"); }, ".mod(' 0.1')");
-            BigTests.IsException(() => { new Big("12.345").Mod("7.5 "); }, ".mod('7.5 ')");
-            BigTests.IsException(() => { new Big("12.345").Mod(" 0 "); }, ".mod(' 0 ')");
-            BigTests.IsException(() => { new Big("12.345").Mod("+1"); }, ".mod('+1')");
-            BigTests.IsException(() => { new Big("12.345").Mod(" +1.2"); }, ".mod(' +1.2')");
-            BigTests.IsException(() => { new Big("12.345").Mod("- 99"); }, ".mod('- 99')");
-            BigTests.IsException(() => { new Big("12.345").Mod("9.9.9"); }, ".mod('9.9.9')");
-            BigTests.IsException(() => { new Big("12.345").Mod("10.1.0"); }, ".mod('10.1.0')");
-            BigTests.IsException(() => { new Big("12.345").Mod("0x16"); }, ".mod('0x16')");
-            BigTests.IsException(() => { new Big("12.345").Mod("1e"); }, ".mod('1e')");
-            BigTests.IsException(() => { new Big("12.345").Mod("8 e"); }, ".mod('8 e')");
-            BigTests.IsException(() => { new Big("12.345").Mod("77-e"); }, ".mod('77-e')");
-            BigTests.IsException(() => { new Big("12.345").Mod("123e.0"); }, ".mod('123e.0')");
-            BigTests.IsException(() => { new Big("12.345").Mod("4e1."); }, ".mod('4e1.')");
-            BigTests.IsException(() => { new Big("12.345").Mod(double.PositiveInfinity); }, ".mod(Infinity)");
-            BigTests.IsException(() => { new Big("12.345").Mod(double.NegativeInfinity); }, ".mod(-Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod((Big)null); }, ".mod(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod((string)null); }, ".mod(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("NaN"); }, ".mod('NaN')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod(""); }, ".mod('')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod(" "); }, ".mod(' ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("hello"); }, ".mod('hello')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("\t"); }, ".mod('\t')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod(" 0.1"); }, ".mod(' 0.1')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("7.5 "); }, ".mod('7.5 ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod(" 0 "); }, ".mod(' 0 ')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("+1"); }, ".mod('+1')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod(" +1.2"); }, ".mod(' +1.2')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("- 99"); }, ".mod('- 99')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("9.9.9"); }, ".mod('9.9.9')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("10.1.0"); }, ".mod('10.1.0')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("0x16"); }, ".mod('0x16')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("1e"); }, ".mod('1e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("8 e"); }, ".mod('8 e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("77-e"); }, ".mod('77-e')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("123e.0"); }, ".mod('123e.0')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod("4e1."); }, ".mod('4e1.')");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod(double.PositiveInfinity); }, ".mod(Infinity)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Mod(double.NegativeInfinity); }, ".mod(-Infinity)");
 
             Assert.Pass();
         }

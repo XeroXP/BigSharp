@@ -14,20 +14,17 @@ namespace BigSharp.Tests
         [Test]
         public void ToString()
         {
-            var t = (object expected0, object value0) =>
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (object expected0, BigArgument value) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(value).ToString());
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(value).ToString());
             };
 
-            Big.NE = -7;
-            Big.PE = 21;
+            bigFactory.Config.NE = -7;
+            bigFactory.Config.PE = 21;
 
             t("0", 0);
             t("9", 9);
@@ -1004,35 +1001,35 @@ namespace BigSharp.Tests
             t("980", "98.e1");
             t("0.0003", "3.e-4");
 
-            BigTests.IsException(() => { new Big((Big)null); }, "new Big(null)");
-            BigTests.IsException(() => { new Big((string)null); }, "new Big(null)");
-            BigTests.IsException(() => { new Big("NaN"); }, "new Big('NaN')");
-            BigTests.IsException(() => { new Big(""); }, "new Big('')");
-            BigTests.IsException(() => { new Big(" "); }, "new Big(' ')");
-            BigTests.IsException(() => { new Big("hello"); }, "new Big('hello')");
-            BigTests.IsException(() => { new Big("\t"); }, "new Big('\t')");
-            BigTests.IsException(() => { new Big(" 0.1"); }, "new Big(' 0.1')");
-            BigTests.IsException(() => { new Big("7.5 "); }, "new Big('7.5 ')");
-            BigTests.IsException(() => { new Big(" 0 "); }, "new Big(' 0 ')");
-            BigTests.IsException(() => { new Big("+1"); }, "new Big('+1')");
-            BigTests.IsException(() => { new Big(" +1.2"); }, "new Big(' +1.2')");
-            BigTests.IsException(() => { new Big("- 99"); }, "new Big('- 99')");
-            BigTests.IsException(() => { new Big("9.9.9"); }, "new Big('9.9.9')");
-            BigTests.IsException(() => { new Big("10.1.0"); }, "new Big('10.1.0')");
-            BigTests.IsException(() => { new Big("0x16"); }, "new Big('0x16')");
-            BigTests.IsException(() => { new Big("1e"); }, "new Big('1e')");
-            BigTests.IsException(() => { new Big("8 e"); }, "new Big('8 e')");
-            BigTests.IsException(() => { new Big("77-e"); }, "new Big('77-e')");
-            BigTests.IsException(() => { new Big("123e.0"); }, "new Big('123e.0')");
-            BigTests.IsException(() => { new Big("4e1."); }, "new Big('4e1.')");
-            BigTests.IsException(() => { new Big("41a"); }, "new Big('41a')");
-            BigTests.IsException(() => { new Big("99ee"); }, "new Big('99ee')");
-            BigTests.IsException(() => { new Big("e0"); }, "new Big('e0')");
-            BigTests.IsException(() => { new Big(double.PositiveInfinity); }, "new Big(Infinity)");
-            BigTests.IsException(() => { new Big(double.NegativeInfinity); }, "new Big(-Infinity)");
+            BigTests.IsException(() => { bigFactory.Big((Big)null); }, "bigFactory.Big(null)");
+            BigTests.IsException(() => { bigFactory.Big((string)null); }, "bigFactory.Big(null)");
+            BigTests.IsException(() => { bigFactory.Big("NaN"); }, "bigFactory.Big('NaN')");
+            BigTests.IsException(() => { bigFactory.Big(""); }, "bigFactory.Big('')");
+            BigTests.IsException(() => { bigFactory.Big(" "); }, "bigFactory.Big(' ')");
+            BigTests.IsException(() => { bigFactory.Big("hello"); }, "bigFactory.Big('hello')");
+            BigTests.IsException(() => { bigFactory.Big("\t"); }, "bigFactory.Big('\t')");
+            BigTests.IsException(() => { bigFactory.Big(" 0.1"); }, "bigFactory.Big(' 0.1')");
+            BigTests.IsException(() => { bigFactory.Big("7.5 "); }, "bigFactory.Big('7.5 ')");
+            BigTests.IsException(() => { bigFactory.Big(" 0 "); }, "bigFactory.Big(' 0 ')");
+            BigTests.IsException(() => { bigFactory.Big("+1"); }, "bigFactory.Big('+1')");
+            BigTests.IsException(() => { bigFactory.Big(" +1.2"); }, "bigFactory.Big(' +1.2')");
+            BigTests.IsException(() => { bigFactory.Big("- 99"); }, "bigFactory.Big('- 99')");
+            BigTests.IsException(() => { bigFactory.Big("9.9.9"); }, "bigFactory.Big('9.9.9')");
+            BigTests.IsException(() => { bigFactory.Big("10.1.0"); }, "bigFactory.Big('10.1.0')");
+            BigTests.IsException(() => { bigFactory.Big("0x16"); }, "bigFactory.Big('0x16')");
+            BigTests.IsException(() => { bigFactory.Big("1e"); }, "bigFactory.Big('1e')");
+            BigTests.IsException(() => { bigFactory.Big("8 e"); }, "bigFactory.Big('8 e')");
+            BigTests.IsException(() => { bigFactory.Big("77-e"); }, "bigFactory.Big('77-e')");
+            BigTests.IsException(() => { bigFactory.Big("123e.0"); }, "bigFactory.Big('123e.0')");
+            BigTests.IsException(() => { bigFactory.Big("4e1."); }, "bigFactory.Big('4e1.')");
+            BigTests.IsException(() => { bigFactory.Big("41a"); }, "bigFactory.Big('41a')");
+            BigTests.IsException(() => { bigFactory.Big("99ee"); }, "bigFactory.Big('99ee')");
+            BigTests.IsException(() => { bigFactory.Big("e0"); }, "bigFactory.Big('e0')");
+            BigTests.IsException(() => { bigFactory.Big(double.PositiveInfinity); }, "bigFactory.Big(Infinity)");
+            BigTests.IsException(() => { bigFactory.Big(double.NegativeInfinity); }, "bigFactory.Big(-Infinity)");
 
-            Big.NE = -10;
-            Big.PE = 10;
+            bigFactory.Config.NE = -10;
+            bigFactory.Config.PE = 10;
 
             t("1234567890", "1234567890");
             t("1.2345678901e+10", "12345678901");
@@ -1040,14 +1037,14 @@ namespace BigSharp.Tests
             t("1e-11", "0.00000000001");
 
             t("0", "-0");
-            BigTests.AreEqual("-0", new Big("-0").ValueOf());
-            BigTests.AreEqual("-0", new Big("-0.0000000000").ValueOf());
+            BigTests.AreEqual("-0", bigFactory.Big("-0").ValueOf());
+            BigTests.AreEqual("-0", bigFactory.Big("-0.0000000000").ValueOf());
 
-            Big.NE = Big.PE = 0;
+            bigFactory.Config.NE = bigFactory.Config.PE = 0;
 
             t("0e+0", "-0");
-            BigTests.AreEqual("-0e+0", new Big("-0").ValueOf());
-            BigTests.AreEqual("-0e+0", new Big("-0.0000000000").ValueOf());
+            BigTests.AreEqual("-0e+0", bigFactory.Big("-0").ValueOf());
+            BigTests.AreEqual("-0e+0", bigFactory.Big("-0.0000000000").ValueOf());
 
             Assert.Pass();
         }
