@@ -14,23 +14,20 @@ namespace BigSharp.Tests
         [Test]
         public void Neg()
         {
-            var t = (object expected0, object value0) =>
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (object expected0, BigArgument value) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(value).Neg().ToString());
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(value).Neg().ToString());
             };
 
-            Big.NE = -7;
-            Big.PE = 21;
+            bigFactory.Config.NE = -7;
+            bigFactory.Config.PE = 21;
 
-            BigTests.IsNegativeZero(new Big("0").Neg());
-            BigTests.IsNegativeZero(new Big("-0").Neg().Neg());
+            BigTests.IsNegativeZero(bigFactory.Big("0").Neg());
+            BigTests.IsNegativeZero(bigFactory.Big("-0").Neg().Neg());
 
             t("0", "0");
             t("-1", "1");

@@ -14,20 +14,17 @@ namespace BigSharp.Tests
         [Test]
         public void ToPrecision()
         {
-            var t = (object expected0, object value0, int? precision) =>
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (object expected0, BigArgument value, int? precision) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(value).ToPrecision(precision));
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(value).ToPrecision(precision));
             };
 
-            Big.DP = 20;
-            Big.RM = RoundingMode.ROUND_HALF_UP;
+            bigFactory.Config.DP = 20;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
 
             t("0", 0, null);
             t("0", -0, null);
@@ -125,7 +122,7 @@ namespace BigSharp.Tests
             t("1.0e+5", 99576, 2);
             t("1e+8", "96236483.87", 1);
 
-            Big.RM = RoundingMode.ROUND_DOWN;
+            bigFactory.Config.RM = RoundingMode.ROUND_DOWN;
 
             t("-844789036.5239726", "-844789036.52397268892", 16);
             t("-5056.20629012767878749185273209679064306054", "-5056.206290127678787491852732096790643060542", 42);
@@ -212,7 +209,7 @@ namespace BigSharp.Tests
             t("45285.246089613169416440797840714", "45285.2460896131694164407978407142422013937", 32);
             t("307760226411464.7333268079863299", "307760226411464.73332680798632996332324381779707", 31);
 
-            Big.RM = RoundingMode.ROUND_HALF_UP;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
 
             t("7.905300379788e+16", "79053003797878062.6454954", 13);
             t("-6.83490000000e-13", "-0.00000000000068349", 12);
@@ -300,7 +297,7 @@ namespace BigSharp.Tests
             t("-6.21108762339449e+20", "-621108762339448671355.1393522133", 15);
             t("8380435.063269894549337249", "8380435.063269894549337248813357930541546715547", 25);
 
-            Big.RM = RoundingMode.ROUND_HALF_EVEN;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_EVEN;
 
             t("0.08000", "0.08", 4);
             t("-4.5132e+21", "-4513243388120382069815.8508153058993058875", 5);
@@ -391,11 +388,11 @@ namespace BigSharp.Tests
             t("-3.56e+4", "-35566.4678487", 3);
             t("123.45", "12.345e1", null);
 
-            BigTests.IsException(() => { new Big(1.23).ToPrecision(-23); }, "-23");
-            BigTests.IsException(() => { new Big(1.23).ToPrecision(0); }, "0");
+            BigTests.IsException(() => { bigFactory.Big(1.23).ToPrecision(-23); }, "-23");
+            BigTests.IsException(() => { bigFactory.Big(1.23).ToPrecision(0); }, "0");
 
             // ROUND_UP
-            Big.RM = RoundingMode.ROUND_UP;
+            bigFactory.Config.RM = RoundingMode.ROUND_UP;
 
             t("7.905300379788e+16", "79053003797878062.6454954", 13);
             t("-6.83490000000e-13", "-0.00000000000068349", 12);

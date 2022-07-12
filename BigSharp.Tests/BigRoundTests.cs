@@ -14,23 +14,20 @@ namespace BigSharp.Tests
         [Test]
         public void Round()
         {
+            var bigFactory = new BigFactory(new BigConfig());
+
             int? u = null;
             RoundingMode? ur = null;
 
-            var t = (object expected0, object value0, int? decimalPlaces, RoundingMode? roundingMode) =>
+            var t = (object expected0, BigArgument value, int? decimalPlaces, RoundingMode? roundingMode) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(value).Round(decimalPlaces, roundingMode).ToString());
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(value).Round(decimalPlaces, roundingMode).ToString());
             };
 
-            Big.DP = 20;
-            Big.RM = RoundingMode.ROUND_HALF_UP;
+            bigFactory.Config.DP = 20;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
 
             t("0", "0.000084888060736883027314038572334303632", null, null);
             t("30845717889906383053", "30845717889906383052.56472015469740823", null, null);
@@ -335,8 +332,8 @@ namespace BigSharp.Tests
             t("12.35", "12.345", 2, null);
             t("12", "12.345", u, null);
 
-            Big.DP = 20;
-            Big.RM = RoundingMode.ROUND_HALF_EVEN;
+            bigFactory.Config.DP = 20;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_EVEN;
 
             t(1, 1.23, u, ur);
             t(-1, -1.23, u, ur);
@@ -4967,7 +4964,7 @@ namespace BigSharp.Tests
             t("8.9952767699784490329238753106556088240055363532827226609029521944449657384883384170667072930734367679170716914947678038820950440722219201194e+43", "89952767699784490329238753106556088240055363.53282722660902952194444965738488338417066707293073436767917071691494767803882095044072221920119400608976324854", 97, RoundingMode.ROUND_HALF_EVEN);
 
             // Tests for RM 3, ROUND_UP, i.e. round away from zero.
-            Big.RM = RoundingMode.ROUND_UP;
+            bigFactory.Config.RM = RoundingMode.ROUND_UP;
 
             t(0, 0, null, null);
             t(0, -0, null, null);

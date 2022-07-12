@@ -14,22 +14,19 @@ namespace BigSharp.Tests
         [Test]
         public void Pow()
         {
+            var bigFactory = new BigFactory(new BigConfig());
+
             var MAX_POWER = (int)1e6;
 
-            var t = (object expected0, object n0, int exp) =>
+            var t = (object expected0, BigArgument n, int exp) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? n = n0.ToBig();
-
-                if (n == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected.ToString(), new Big(n).Pow(exp).ToString());
+                BigTests.AreEqual(expected.ToString(), bigFactory.Big(n).Pow(exp).ToString());
             };
 
-            Big.DP = 20;
-            Big.RM = RoundingMode.ROUND_HALF_UP;
+            bigFactory.Config.DP = 20;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
 
             t(4, 2, 2);
             t(2147483648, 2, 31);
@@ -936,7 +933,7 @@ namespace BigSharp.Tests
                   "040509176925372372483300649927835887344415603493563915019264675154039059770309142781930141352329958156926976",
                   "-8.7358521345995835476", 16);
 
-            Big.DP = 1000;
+            bigFactory.Config.DP = 1000;
 
             t("5.5626846462680034577255817933310101605480399511558295763833185422180110870347954896357078975312775514101" +
                   "683493275895275128810854038836502721400309634442970528269449838300058261990253686064590901798039126173562593" +
@@ -960,8 +957,8 @@ namespace BigSharp.Tests
             // As negative exponents involve a division, the result depends on the
             // decimal places and rounding mode specified:
 
-            Big.DP = 40;
-            Big.RM = RoundingMode.ROUND_DOWN;
+            bigFactory.Config.DP = 40;
+            bigFactory.Config.RM = RoundingMode.ROUND_DOWN;
 
             t("0", "41", -25);
             t("0", "-26403", -25);
@@ -983,8 +980,8 @@ namespace BigSharp.Tests
             t("2.11e-38", "-5855.32565", -10);
             t("0", "-3338", -20);
 
-            Big.DP = 101;
-            Big.RM = RoundingMode.ROUND_HALF_UP;
+            bigFactory.Config.DP = 101;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
 
             t("2.59086221967070203169073279093835370593438251373865163612424184820637293172653704e-21", "7280902.7", -3);
             t("0", "-864898946", -18);
@@ -1006,8 +1003,8 @@ namespace BigSharp.Tests
             t("0", "-62548432.8", -25);
             t("1.2208830071779439347812238188621035387222053043582168736013775635140091964690008930489382362e-10", "-90503", -2);
 
-            Big.DP = 99;
-            Big.RM = RoundingMode.ROUND_HALF_EVEN;
+            bigFactory.Config.DP = 99;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_EVEN;
 
             t("3.50565137890907848896561225350273375702045873464e-52", "282", -21);
             t("2.5679471225603104166379068675724780241775210532444313569170923793768408333314758e-20", "91", -10);
@@ -1072,19 +1069,19 @@ namespace BigSharp.Tests
             t("1.25868312332880899610888409696274260282720434321518772464e-43", "52", -25);
             t("0", "262233", -24);
 
-            Big.DP = 0;
-            Big.RM = RoundingMode.ROUND_HALF_EVEN;
+            bigFactory.Config.DP = 0;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_EVEN;
 
             t("0", "-8645", -30);
             t("0", "7.24173993", -23);
 
-            BigTests.IsException(() => { new Big(9).Pow(MAX_POWER + 1); }, ".pow(MAX_POWER + 1)");
-            BigTests.IsException(() => { new Big(9).Pow(-MAX_POWER - 1); }, ".pow(-MAX_POWER - 1)");
+            BigTests.IsException(() => { bigFactory.Big(9).Pow(MAX_POWER + 1); }, ".pow(MAX_POWER + 1)");
+            BigTests.IsException(() => { bigFactory.Big(9).Pow(-MAX_POWER - 1); }, ".pow(-MAX_POWER - 1)");
 
             // ROUND_UP
 
-            Big.DP = 38;
-            Big.RM = RoundingMode.ROUND_UP;
+            bigFactory.Config.DP = 38;
+            bigFactory.Config.RM = RoundingMode.ROUND_UP;
 
             t("1.38465005906932202803554e-15", "72", -8);
             t("3.9341179571912775217040566e-13", "9", -13);
@@ -1097,7 +1094,7 @@ namespace BigSharp.Tests
             t("2.7351112277912533887122e-16", "6", -20);
             t("3e-38", "-5855.32565", -10);
 
-            Big.DP = 99;
+            bigFactory.Config.DP = 99;
 
             t("2.590862219670702031690732790938353705934382513738651636124241848206372931726538e-21", "7280902.7", -3);
             t("1e-99", "-864898946", -18);

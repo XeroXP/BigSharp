@@ -1,8 +1,5 @@
 ﻿using BigSharp.Tests.Extensions;
-using Newtonsoft.Json;
 using NUnit.Framework;
-using System;
-using System.Globalization;
 
 namespace BigSharp.Tests
 {
@@ -17,20 +14,17 @@ namespace BigSharp.Tests
         [Test]
         public void Abs()
         {
-            var t = (object expected0, object value0) =>
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (object expected0, BigArgument value) =>
             {
-                string expected = expected0.ToExpectedString();
+                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                Big? value = value0.ToBig();
-
-                if (value == null)
-                    Assert.Fail();
-
-                BigTests.AreEqual(expected, new Big(value).Abs().ToString());
+                BigTests.AreEqual(expected, bigFactory.Big(value).Abs().ToString());
             };
 
-            Big.DP = 20;
-            Big.RM = RoundingMode.ROUND_HALF_UP;
+            bigFactory.Config.DP = 20;
+            bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
 
             t(1, 1);
             t(1, -1);
@@ -48,23 +42,22 @@ namespace BigSharp.Tests
             t(123456.7891011, -123456.7891011);
             t(999.999, "-999.999");
             t(99, 99);
-            t(1, new Big(-1));
-            t(0.001, new Big(0.001));
-            t(0.001, new Big("-0.001"));
+            t(1, bigFactory.Big(-1));
+            t(0.001, bigFactory.Big(0.001));
+            t(0.001, bigFactory.Big("-0.001"));
             t(0, 0);
-            t(0, -0);
+            t(0, "-0");
 
             var minusZero = 1 / double.NegativeInfinity;
 
             t(0, 0);
-            t(0, -0);
+            t(0, "-0");
             t(0, minusZero);
 
-            BigTests.IsNegativeZero(new Big("-0"));
-            BigTests.IsNegativeZero(new Big(minusZero));
-            BigTests.IsPositiveZero(new Big(-0).Abs());
-            BigTests.IsPositiveZero(new Big("-0").Abs());
-            BigTests.IsPositiveZero(new Big(minusZero).Abs());
+            BigTests.IsNegativeZero(bigFactory.Big("-0"));
+            BigTests.IsNegativeZero(bigFactory.Big(minusZero));
+            BigTests.IsPositiveZero(bigFactory.Big("-0").Abs());
+            BigTests.IsPositiveZero(bigFactory.Big(minusZero).Abs());
 
             t(5e-324, 5e-324);
             t(5e-324, -5e-324);

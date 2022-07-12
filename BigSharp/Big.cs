@@ -1,346 +1,89 @@
 ﻿using BigSharp.Extensions;
 using System.Globalization;
-using System.Text.RegularExpressions;
 
 namespace BigSharp
 {
     public class Big
     {
-        /************************************** EDITABLE DEFAULTS *****************************************/
-
-
-        // The default values below must be integers within the stated ranges.
-
-        /// <summary>
-        /// The maximum number of decimal places (DP) of the results of operations involving division:
-        /// <br>div and sqrt, and pow with negative exponents.</br>
-        /// </summary>
-        public static int DP = 20;            // 0 to MAX_DP
-
-        /// <summary>
-        /// The rounding mode (RM) used when rounding to the above decimal places.
-        /// <br></br>
-        /// <br>0  Towards zero (i.e. truncate, no rounding).       (ROUND_DOWN)</br>
-        /// <br>1  To nearest neighbour. If equidistant, round up.  (ROUND_HALF_UP)</br>
-        /// <br>2  To nearest neighbour. If equidistant, to even.   (ROUND_HALF_EVEN)</br>
-        /// <br>3  Away from zero.                                  (ROUND_UP)</br>
-        /// </summary>
-        public static RoundingMode RM = RoundingMode.ROUND_HALF_UP;             // 0, 1, 2 or 3
-
-        /// <summary>
-        /// The maximum value of DP and Big.DP.
-        /// </summary>
-        public static int MAX_DP = (int)1E6;       // 0 to 1000000
-
-        /// <summary>
-        /// The maximum magnitude of the exponent argument to the pow method.
-        /// </summary>
-        public static int MAX_POWER = (int)1E6;    // 1 to 1000000
-
-        /// <summary>
-        /// The negative exponent (NE) at and beneath which toString returns exponential notation.
-        /// <br>(JavaScript numbers: -7)</br>
-        /// <br>-1000000 is the minimum recommended exponent value of a Big.</br>
-        /// </summary>
-        public static int NE = -7;            // 0 to -1000000
-
-        /*
-         * The positive exponent (PE) at and above which toString returns exponential notation.
-         * (JavaScript numbers: 21)
-         * 1000000 is the maximum recommended exponent value of a Big, but this limit is not enforced.
-         */
-        /// <summary>
-        /// The positive exponent (PE) at and above which toString returns exponential notation.
-        /// <br>(JavaScript numbers: 21)</br>
-        /// <br>1000000 is the maximum recommended exponent value of a Big, but this limit is not enforced.</br>
-        /// </summary>
-        public static int PE = 21;            // 0 to 1000000
-
-        /// <summary>
-        /// When true, an error will be thrown if a primitive number is passed to the Big constructor,
-        /// <br>or if valueOf is called, or if toNumber is called on a Big which cannot be converted to a</br>
-        /// <br>primitive number without a loss of precision.</br>
-        /// </summary>
-        public static bool STRICT = false;     // true or false
-
-
-        /**************************************************************************************************/
-
-
-        // Error messages.
-        private static readonly string NAME = "[BigSharp] ",
-        INVALID = NAME + "Invalid ",
-        INVALID_DP = INVALID + "decimal places",
-        INVALID_RM = INVALID + "rounding mode",
-        DIV_BY_ZERO = NAME + "Division by zero";
-
-        private static readonly string NUMERIC = @"^-?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$";
+        public BigConfig Config;
 
         public int s;
         public long e;
         public long[] c;
 
-        public Big(Big n)
+        public Big(BigConfig? config = null)
+        {
+            this.Config = config ?? new BigConfig();
+
+            this.s = 0;
+            this.e = 0;
+            this.c = new long[0];
+        }
+        public Big(BigArgument n, BigConfig? config = null) : this(config)
+        {
+            string nString = "";
+            n.Switch(
+                @double =>
+                {
+                    if (this.Config.STRICT == true)
+                        throw new BigException(BigException.INVALID + "value");
+
+                    nString = @double == 0 && 1 / @double < 0 ? "-0" : @double.ToString(CultureInfo.InvariantCulture);
+                },
+                @decimal =>
+                {
+                    if (this.Config.STRICT == true)
+                        throw new BigException(BigException.INVALID + "value");
+
+                    nString = @decimal == 0 && 1 / (double)@decimal < 0 ? "-0" : @decimal.ToString(CultureInfo.InvariantCulture);
+                },
+                @long =>
+                {
+                    if (this.Config.STRICT == true)
+                        throw new BigException(BigException.INVALID + "value");
+
+                    nString = @long == 0 && 1 / (double)@long < 0 ? "-0" : @long.ToString(CultureInfo.InvariantCulture);
+                },
+                @int =>
+                {
+                    if (this.Config.STRICT == true)
+                        throw new BigException(BigException.INVALID + "value");
+
+                    nString = @int == 0 && 1 / (double)@int < 0 ? "-0" : @int.ToString(CultureInfo.InvariantCulture);
+                },
+                @string =>
+                {
+                    if (string.IsNullOrEmpty(@string))
+                        throw new BigException(BigException.INVALID + "string");
+
+                    nString = @string;
+                },
+                bigInteger =>
+                {
+                    nString = bigInteger.ToString(CultureInfo.InvariantCulture);
+                },
+                big =>
+                {
+                    if (big == null)
+                        throw new BigException(BigException.INVALID + "Big");
+
+                    _Big(big);
+                    return;
+                }
+            );
+            BigHelperFunctions.parse(this, nString);
+        }
+
+        private void _Big(Big n)
         {
             if (n == null)
-                throw new BigException(INVALID + "Big");
+                throw new BigException(BigException.INVALID + "Big");
             this.s = n.s;
             this.e = n.e;
             this.c = n.c.Slice();
         }
 
-        public Big(string n)
-        {
-            if (n == null)
-                throw new BigException(INVALID + "string");
-
-            parse(this, n);
-        }
-        public Big(int n)
-        {
-            if (Big.STRICT == true)
-            {
-                throw new BigException(INVALID + "value");
-            }
-
-            var nString = n == 0 && 1 / (double)n < 0 ? "-0" : n.ToString(CultureInfo.InvariantCulture);
-
-            parse(this, nString);
-        }
-        public Big(long n)
-        {
-            if (Big.STRICT == true)
-            {
-                throw new BigException(INVALID + "value");
-            }
-
-            var nString = n == 0 && 1 / (double)n < 0 ? "-0" : n.ToString(CultureInfo.InvariantCulture);
-
-            parse(this, nString);
-        }
-
-        public Big(double n)
-        {
-            if (Big.STRICT == true)
-            {
-                throw new BigException(INVALID + "value");
-            }
-
-            var nString = n == 0 && 1 / n < 0 ? "-0" : n.ToString(CultureInfo.InvariantCulture);
-
-            parse(this, nString);
-        }
-
-        public Big(decimal n)
-        {
-            if (Big.STRICT == true)
-            {
-                throw new BigException(INVALID + "value");
-            }
-
-            var nString = n == 0 && 1 / n < 0 ? "-0" : n.ToString(CultureInfo.InvariantCulture);
-
-            parse(this, nString);
-        }
-
-        /// <summary>
-        /// Parse the number or string value passed to a Big constructor.
-        /// </summary>
-        /// <param name="x">{Big} A Big number instance.</param>
-        /// <param name="n">{string} A numeric value.</param>
-        /// <returns></returns>
-        /// <exception cref="BigException"></exception>
-        private Big parse(Big x, string n)
-        {
-            long e;
-            int i, nl;
-
-            if (!Regex.IsMatch(n, NUMERIC, RegexOptions.IgnoreCase))
-            {
-                throw new BigException(INVALID + "number");
-            }
-
-            // Determine sign.
-            if (n.ElementAt(0) == '-')
-            {
-                n = n.Substring(1);
-                x.s = -1;
-            }
-            else
-            {
-                x.s = 1;
-            }
-
-            // Decimal point?
-            if ((e = n.IndexOf('.')) > -1) n = n.Replace(".", "");
-
-            // Exponential form?
-            if ((i = n.IndexOf('e', StringComparison.InvariantCultureIgnoreCase)) > 0)
-            {
-
-                // Determine exponent.
-                if (e < 0) e = i;
-                e += long.Parse(n.Substring(i + 1));
-                n = n.Substring(0, i);
-            }
-            else if (e < 0)
-            {
-
-                // Integer.
-                e = n.Length;
-            }
-
-            nl = n.Length;
-
-            // Determine leading zeros.
-            for (i = 0; i < nl && n.ElementAt(i) == '0';) ++i;
-
-            if (i == nl)
-            {
-
-                // Zero.
-                x.e = 0;
-                x.c = new long[] { 0 };
-            }
-            else
-            {
-
-                // Determine trailing zeros.
-                for (; nl > 0 && n.ElementAt(--nl) == '0';) ;
-                x.e = e - i - 1;
-                x.c = new long[0];
-
-                // Convert string to array of digits without leading/trailing zeros.
-                for (e = 0; i <= nl;)
-                {
-                    if (x.c.LongLength < e + 1)
-                    ArrayExtensions.Resize(ref x.c, e + 1);
-                    x.c[e++] = int.Parse(n.ElementAt(i++).ToString(CultureInfo.InvariantCulture));
-                }
-            }
-
-            return x;
-        }
-
-        /// <summary>
-        /// Round Big x to a maximum of sd significant digits using rounding mode rm.
-        /// </summary>
-        /// <param name="x">{Big} The Big to round.</param>
-        /// <param name="sd">{number} Significant digits: integer, 0 to MAX_DP inclusive.</param>
-        /// <param name="rm">{RoundingMode} Rounding mode.</param>
-        /// <param name="more">{boolean} Whether the result of division was truncated.</param>
-        /// <returns></returns>
-        private Big round(Big x, long sd, RoundingMode? rm, bool more = false)
-        {
-            var xc = x.c;
-
-            if (rm == null) rm = Big.RM;
-
-            if (sd < 1)
-            {
-                more =
-                  rm == RoundingMode.ROUND_UP && (more || (xc.LongLength > 0 && xc[0] != 0)) || sd == 0 && (
-                  rm == RoundingMode.ROUND_HALF_UP && xc[0] >= 5 ||
-                  rm == RoundingMode.ROUND_HALF_EVEN && (xc[0] > 5 || xc[0] == 5 && (more || xc.LongLength > 1))
-                );
-
-                ArrayExtensions.Resize(ref xc, 1);
-
-                if (more)
-                {
-
-                    // 1, 0.1, 0.01, 0.001, 0.0001 etc.
-                    x.e = x.e - sd + 1;
-                    xc[0] = 1;
-                }
-                else
-                {
-
-                    // Zero.
-                    xc[0] = x.e = 0;
-                }
-            }
-            else if (sd < xc.LongLength)
-            {
-
-                // xc[sd] is the digit after the digit that may be rounded up.
-                more =
-                  rm == RoundingMode.ROUND_HALF_UP && xc[sd] >= 5 ||
-                  rm == RoundingMode.ROUND_HALF_EVEN && (xc[sd] > 5 || xc[sd] == 5 &&
-                    (more || (xc.LongLength > sd + 1) || (xc[sd - 1] & 1) != 0)) ||
-                  rm == RoundingMode.ROUND_UP && (more || (xc.LongLength > 0 && xc[0] != 0));
-
-                // Remove any digits after the required precision.
-                ArrayExtensions.Resize(ref xc, sd--);
-
-                // Round up?
-                if (more)
-                {
-
-                    // Rounding up may mean the previous digit has to be rounded up.
-                    for (; sd >= 0 && ++xc[sd] > 9;)
-                    {
-                        xc[sd] = 0;
-                        if (0 == sd--)
-                        {
-                            ++x.e;
-                            ArrayExtensions.Unshift(ref xc, 1);
-                        }
-                    }
-                }
-
-                // Remove trailing zeros.
-                for (sd = xc.LongLength; xc[--sd] == 0;) ArrayExtensions.Pop(ref xc);
-            }
-
-            x.c = xc;
-
-            return x;
-        }
-
-        /// <summary>
-        /// Handles P.toExponential, P.toFixed, P.toJSON, P.toPrecision, P.toString and P.valueOf.
-        /// </summary>
-        /// <param name="x"></param>
-        /// <param name="doExponential"></param>
-        /// <param name="isNonzero"></param>
-        /// <returns>A string representing the value of Big x in normal or exponential notation.</returns>
-        private string stringify(Big x, bool doExponential, bool isNonzero)
-        {
-            var e = x.e;
-            var s = string.Join("", x.c);
-            var n = s.Length;
-
-            // Exponential notation?
-            if (doExponential)
-            {
-                s = int.Parse(s.ElementAt(0).ToString(CultureInfo.InvariantCulture)) + (n > 1 ? "." + s.Substring(1) : "") + (e < 0 ? "e" : "e+") + e;
-
-                // Normal notation.
-            }
-            else if (e < 0)
-            {
-                for (; (0 != ++e);) s = "0" + s;
-                s = "0." + s;
-            }
-            else if (e > 0)
-            {
-                if (++e > n)
-                {
-                    for (e -= n; (0 != e--);) s += "0";
-                }
-                else if (e < n)
-                {
-                    s = s.Substring(0, (int)e) + "." + s.Substring((int)e);
-                }
-            }
-            else if (n > 1)
-            {
-                s = int.Parse(s.ElementAt(0).ToString(CultureInfo.InvariantCulture)) + "." + s.Substring(1);
-            }
-
-            return x.s < 0 && isNonzero ? "-" + s : s;
-        }
+        
 
         // Prototype/instance methods
 
@@ -351,7 +94,7 @@ namespace BigSharp
         /// <returns>A new Big whose value is the absolute value of this Big.</returns>
         public Big Abs()
         {
-            var x = new Big(this);
+            var x = new Big(this, this.Config);
             x.s = 1;
             return x;
         }
@@ -361,50 +104,10 @@ namespace BigSharp
         /// 
         /// </summary>
         /// <param name="y"></param>
-        /// <returns><br>1 if the value of this Big is greater than the value of Big y,</br>
-        /// <br>-1 if the value of this Big is less than the value of Big y, or</br>
-        /// <br>0 if they have the same value.</br></returns>
-        public long Cmp(string y) => _cmp(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>1 if the value of this Big is greater than the value of Big y,</br>
-        /// <br>-1 if the value of this Big is less than the value of Big y, or</br>
-        /// <br>0 if they have the same value.</br></returns>
-        public long Cmp(int y) => _cmp(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>1 if the value of this Big is greater than the value of Big y,</br>
-        /// <br>-1 if the value of this Big is less than the value of Big y, or</br>
-        /// <br>0 if they have the same value.</br></returns>
-        public long Cmp(long y) => _cmp(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>1 if the value of this Big is greater than the value of Big y,</br>
-        /// <br>-1 if the value of this Big is less than the value of Big y, or</br>
-        /// <br>0 if they have the same value.</br></returns>
-        public long Cmp(double y) => _cmp(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>1 if the value of this Big is greater than the value of Big y,</br>
-        /// <br>-1 if the value of this Big is less than the value of Big y, or</br>
-        /// <br>0 if they have the same value.</br></returns>
-        public long Cmp(decimal y) => _cmp(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>1 if the value of this Big is greater than the value of Big y,</br>
-        /// <br>-1 if the value of this Big is less than the value of Big y, or</br>
-        /// <br>0 if they have the same value.</br></returns>
-        public long Cmp(Big y) => _cmp(new Big(y));
+        /// <returns>1 if the value of this Big is greater than the value of Big y,<br />
+        /// -1 if the value of this Big is less than the value of Big y, or<br />
+        /// 0 if they have the same value.</returns>
+        public long Cmp(BigArgument y) => _cmp(new Big(y, this.Config));
         private long _cmp(Big y)
         {
             bool isneg;
@@ -444,61 +147,26 @@ namespace BigSharp
         /// 
         /// </summary>
         /// <param name="y"></param>
-        /// <returns><br>A new Big whose value is the value of this Big divided by the value of Big y, rounded,</br>
-        /// <br>if necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.</br></returns>
-        public Big Div(string y) => _div(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>A new Big whose value is the value of this Big divided by the value of Big y, rounded,</br>
-        /// <br>if necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.</br></returns>
-        public Big Div(int y) => _div(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>A new Big whose value is the value of this Big divided by the value of Big y, rounded,</br>
-        /// <br>if necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.</br></returns>
-        public Big Div(long y) => _div(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>A new Big whose value is the value of this Big divided by the value of Big y, rounded,</br>
-        /// <br>if necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.</br></returns>
-        public Big Div(double y) => _div(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>A new Big whose value is the value of this Big divided by the value of Big y, rounded,</br>
-        /// <br>if necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.</br></returns>
-        public Big Div(decimal y) => _div(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns><br>A new Big whose value is the value of this Big divided by the value of Big y, rounded,</br>
-        /// <br>if necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.</br></returns>
-        public Big Div(Big y) => _div(new Big(y));
+        /// <returns>A new Big whose value is the value of this Big divided by the value of Big y, rounded,<br />
+        /// if necessary, to a maximum of Big.Config.DP decimal places using rounding mode Big.Config.RM.</returns>
+        public Big Div(BigArgument y) => _div(new Big(y, this.Config));
         private Big _div(Big y)
         {
             var x = this;
             var a = x.c;                  // dividend
             var b = y.c;   // divisor
             long k = x.s == y.s ? 1 : -1;
-            var dp = Big.DP;
+            var dp = x.Config.DP;
 
-            if (dp != ~~dp || dp < 0 || dp > MAX_DP)
+            if (dp != ~~dp || dp < 0 || dp > x.Config.MAX_DP)
             {
-                throw new BigException(INVALID_DP);
+                throw new BigException(BigException.INVALID_DP);
             }
 
             // Divisor is zero?
             if (b[0] == 0)
             {
-                throw new BigException(DIV_BY_ZERO);
+                throw new BigException(BigException.DIV_BY_ZERO);
             }
 
             // Dividend is 0? Return +-0.
@@ -609,7 +277,7 @@ namespace BigSharp
             q.c = qc;
 
             // Round?
-            if (qi > p) round(q, p, Big.RM, r.LongLength > 0);
+            if (qi > p) BigHelperFunctions.round(q, p, x.Config.RM, r.LongLength > 0);
 
             return q;
         }
@@ -619,53 +287,8 @@ namespace BigSharp
         /// 
         /// </summary>
         /// <param name="y"></param>
-        /// <returns>True if the value of this Big is equal to the value of Big y, otherwise return false.</returns>
-        public bool Eq(string y)
-        {
-            return this.Cmp(y) == 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is equal to the value of Big y, otherwise return false.</returns>
-        public bool Eq(int y)
-        {
-            return this.Cmp(y) == 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is equal to the value of Big y, otherwise return false.</returns>
-        public bool Eq(long y)
-        {
-            return this.Cmp(y) == 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is equal to the value of Big y, otherwise return false.</returns>
-        public bool Eq(double y)
-        {
-            return this.Cmp(y) == 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is equal to the value of Big y, otherwise return false.</returns>
-        public bool Eq(decimal y)
-        {
-            return this.Cmp(y) == 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is equal to the value of Big y, otherwise return false.</returns>
-        public bool Eq(Big y)
+        /// <returns>True if the value of this Big is equal to the value of Big y, otherwise false.</returns>
+        public bool Eq(BigArgument y)
         {
             return this.Cmp(y) == 0;
         }
@@ -675,53 +298,8 @@ namespace BigSharp
         /// 
         /// </summary>
         /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than the value of Big y, otherwise return false.</returns>
-        public bool Gt(string y)
-        {
-            return this.Cmp(y) > 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than the value of Big y, otherwise return false.</returns>
-        public bool Gt(int y)
-        {
-            return this.Cmp(y) > 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than the value of Big y, otherwise return false.</returns>
-        public bool Gt(long y)
-        {
-            return this.Cmp(y) > 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than the value of Big y, otherwise return false.</returns>
-        public bool Gt(double y)
-        {
-            return this.Cmp(y) > 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than the value of Big y, otherwise return false.</returns>
-        public bool Gt(decimal y)
-        {
-            return this.Cmp(y) > 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than the value of Big y, otherwise return false.</returns>
-        public bool Gt(Big y)
+        /// <returns>True if the value of this Big is greater than the value of Big y, otherwise false.</returns>
+        public bool Gt(BigArgument y)
         {
             return this.Cmp(y) > 0;
         }
@@ -731,53 +309,8 @@ namespace BigSharp
         /// 
         /// </summary>
         /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Gte(string y)
-        {
-            return this.Cmp(y) > -1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Gte(int y)
-        {
-            return this.Cmp(y) > -1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Gte(long y)
-        {
-            return this.Cmp(y) > -1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Gte(double y)
-        {
-            return this.Cmp(y) > -1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Gte(decimal y)
-        {
-            return this.Cmp(y) > -1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is greater than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Gte(Big y)
+        /// <returns>True if the value of this Big is greater than or equal to the value of Big y, otherwise false.</returns>
+        public bool Gte(BigArgument y)
         {
             return this.Cmp(y) > -1;
         }
@@ -787,53 +320,8 @@ namespace BigSharp
         /// 
         /// </summary>
         /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than the value of Big y, otherwise return false.</returns>
-        public bool Lt(string y)
-        {
-            return this.Cmp(y) < 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than the value of Big y, otherwise return false.</returns>
-        public bool Lt(int y)
-        {
-            return this.Cmp(y) < 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than the value of Big y, otherwise return false.</returns>
-        public bool Lt(long y)
-        {
-            return this.Cmp(y) < 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than the value of Big y, otherwise return false.</returns>
-        public bool Lt(double y)
-        {
-            return this.Cmp(y) < 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than the value of Big y, otherwise return false.</returns>
-        public bool Lt(decimal y)
-        {
-            return this.Cmp(y) < 0;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than the value of Big y, otherwise return false.</returns>
-        public bool Lt(Big y)
+        /// <returns>True if the value of this Big is less than the value of Big y, otherwise false.</returns>
+        public bool Lt(BigArgument y)
         {
             return this.Cmp(y) < 0;
         }
@@ -843,53 +331,8 @@ namespace BigSharp
         /// 
         /// </summary>
         /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Lte(string y)
-        {
-            return this.Cmp(y) < 1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Lte(int y)
-        {
-            return this.Cmp(y) < 1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Lte(long y)
-        {
-            return this.Cmp(y) < 1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Lte(double y)
-        {
-            return this.Cmp(y) < 1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Lte(decimal y)
-        {
-            return this.Cmp(y) < 1;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>True if the value of this Big is less than or equal to the value of Big y, otherwise return false.</returns>
-        public bool Lte(Big y)
+        /// <returns>True if the value of this Big is less than or equal to the value of Big y, otherwise false.</returns>
+        public bool Lte(BigArgument y)
         {
             return this.Cmp(y) < 1;
         }
@@ -900,37 +343,7 @@ namespace BigSharp
         /// </summary>
         /// <param name="y"></param>
         /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Sub(string y) => _sub(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Sub(int y) => _sub(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Sub(long y) => _sub(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Sub(double y) => _sub(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Sub(decimal y) => _sub(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Sub(Big y) => _sub(new Big(y));
+        public Big Sub(BigArgument y) => _sub(new Big(y, this.Config));
         private Big _sub(Big y)
         {
             long i, j;
@@ -961,7 +374,7 @@ namespace BigSharp
                 }
                 else if (xc[0] != 0)
                 {
-                    y = new Big(x);
+                    y = new Big(x, x.Config);
                 }
                 else
                 {
@@ -1077,43 +490,8 @@ namespace BigSharp
 
             return y;
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Minus(string y) => Sub(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Minus(int y) => Sub(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Minus(long y) => Sub(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Minus(double y) => Sub(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Minus(decimal y) => Sub(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big minus the value of Big y.</returns>
-        public Big Minus(Big y) => Sub(y);
+        /// <inheritdoc cref="Sub" />
+        public Big Minus(BigArgument y) => Sub(y);
 
 
         /// <summary>
@@ -1121,37 +499,7 @@ namespace BigSharp
         /// </summary>
         /// <param name="y"></param>
         /// <returns>A new Big whose value is the value of this Big modulo the value of Big y.</returns>
-        public Big Mod(string y) => _mod(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big modulo the value of Big y.</returns>
-        public Big Mod(int y) => _mod(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big modulo the value of Big y.</returns>
-        public Big Mod(long y) => _mod(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big modulo the value of Big y.</returns>
-        public Big Mod(double y) => _mod(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big modulo the value of Big y.</returns>
-        public Big Mod(decimal y) => _mod(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big modulo the value of Big y.</returns>
-        public Big Mod(Big y) => _mod(new Big(y));
+        public Big Mod(BigArgument y) => _mod(new Big(y, this.Config));
         private Big _mod(Big y)
         {
             bool ygtx;
@@ -1161,7 +509,7 @@ namespace BigSharp
 
             if (y.c[0] == 0)
             {
-                throw new BigException(DIV_BY_ZERO);
+                throw new BigException(BigException.DIV_BY_ZERO);
             }
 
             x.s = y.s = 1;
@@ -1169,15 +517,15 @@ namespace BigSharp
             x.s = a;
             y.s = b;
 
-            if (ygtx) return new Big(x);
+            if (ygtx) return new Big(x, x.Config);
 
-            a = Big.DP;
-            var rm = Big.RM;
-            Big.DP = 0;
-            Big.RM = RoundingMode.ROUND_DOWN;
+            a = x.Config.DP;
+            var rm = x.Config.RM;
+            x.Config.DP = 0;
+            x.Config.RM = RoundingMode.ROUND_DOWN;
             x = x.Div(y);
-            Big.DP = a;
-            Big.RM = rm;
+            x.Config.DP = a;
+            x.Config.RM = rm;
 
             return this.Minus(x.Times(y));
         }
@@ -1189,7 +537,7 @@ namespace BigSharp
         /// <returns>A new Big whose value is the value of this Big negated.</returns>
         public Big Neg()
         {
-            var x = new Big(this);
+            var x = new Big(this, this.Config);
             x.s = -x.s;
             return x;
         }
@@ -1200,37 +548,7 @@ namespace BigSharp
         /// </summary>
         /// <param name="y"></param>
         /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Add(string y) => _add(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Add(int y) => _add(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Add(long y) => _add(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Add(double y) => _add(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Add(decimal y) => _add(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Add(Big y) => _add(new Big(y));
+        public Big Add(BigArgument y) => _add(new Big(y, this.Config));
         private Big _add(Big y)
         {
             long e, k;
@@ -1256,7 +574,7 @@ namespace BigSharp
                 {
                     if (xc[0] != 0)
                     {
-                        y = new Big(x);
+                        y = new Big(x, x.Config);
                     }
                     else
                     {
@@ -1328,47 +646,12 @@ namespace BigSharp
 
             return y;
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Plus(string y) => Add(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Plus(int y) => Add(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Plus(long y) => Add(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Plus(double y) => Add(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Plus(decimal y) => Add(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big plus the value of Big y.</returns>
-        public Big Plus(Big y) => Add(y);
+        /// <inheritdoc cref="Add" />
+        public Big Plus(BigArgument y) => Add(y);
 
 
         /// <summary>
-        /// If n is negative, round to a maximum of Big.DP decimal places using rounding mode Big.RM.
+        /// If n is negative, round to a maximum of Big.Config.DP decimal places using rounding mode Big.Config.RM.
         /// </summary>
         /// <param name="n">{number} Integer, -MAX_POWER to MAX_POWER inclusive.</param>
         /// <returns>A Big whose value is the value of this Big raised to the power n.</returns>
@@ -1376,13 +659,13 @@ namespace BigSharp
         public Big Pow(int n)
         {
             var x = this;
-            var one = new Big("1");
+            var one = new Big("1", x.Config);
             var y = one;
             var isneg = n < 0;
 
-            if (n != ~~n || n < -MAX_POWER || n > MAX_POWER)
+            if (n != ~~n || n < -x.Config.MAX_POWER || n > x.Config.MAX_POWER)
             {
-                throw new BigException(INVALID + "exponent");
+                throw new BigException(BigException.INVALID + "exponent");
             }
 
             if (isneg) n = -n;
@@ -1404,44 +687,44 @@ namespace BigSharp
         /// </summary>
         /// <param name="sd">{number} Significant digits: integer, 1 to MAX_DP inclusive.</param>
         /// <param name="rm">{RoundingMode} Rounding mode.</param>
-        /// <returns><br>A new Big whose value is the value of this Big rounded to a maximum precision of sd</br>
-        /// <br>significant digits using rounding mode rm, or Big.RM if rm is not specified.</br></returns>
+        /// <returns>A new Big whose value is the value of this Big rounded to a maximum precision of sd<br />
+        /// significant digits using rounding mode rm, or Big.Config.RM if rm is not specified.</returns>
         /// <exception cref="BigException"></exception>
         public Big Prec(int sd, RoundingMode? rm = null)
         {
-            if (sd != ~~sd || sd < 1 || sd > MAX_DP)
+            if (sd != ~~sd || sd < 1 || sd > this.Config.MAX_DP)
             {
-                throw new BigException(INVALID + "precision");
+                throw new BigException(BigException.INVALID + "precision");
             }
-            return round(new Big(this), sd, rm);
+            return BigHelperFunctions.round(new Big(this, this.Config), sd, rm);
         }
 
 
         /// <summary>
-        /// If dp is negative, round to an integer which is a multiple of 10**-dp.
-        /// <br>If dp is not specified, round to 0 decimal places.</br>
+        /// If dp is negative, round to an integer which is a multiple of 10**-dp.<br />
+        /// If dp is not specified, round to 0 decimal places.
         /// </summary>
         /// <param name="dp">{number} Integer, -MAX_DP to MAX_DP inclusive.</param>
         /// <param name="rm">{RoundingMode} Rounding mode.</param>
-        /// <returns><br>A new Big whose value is the value of this Big rounded to a maximum of dp decimal places</br>
-        /// <br>using rounding mode rm, or Big.RM if rm is not specified.</br></returns>
+        /// <returns>A new Big whose value is the value of this Big rounded to a maximum of dp decimal places<br />
+        /// using rounding mode rm, or Big.Config.RM if rm is not specified.</returns>
         /// <exception cref="BigException"></exception>
         public Big Round(int? dp, RoundingMode? rm)
         {
             if (dp == null) dp = 0;
-            else if (dp != ~~dp || dp < -MAX_DP || dp > MAX_DP)
+            else if (dp != ~~dp || dp < -this.Config.MAX_DP || dp > this.Config.MAX_DP)
             {
-                throw new BigException(INVALID_DP);
+                throw new BigException(BigException.INVALID_DP);
             }
-            return round(new Big(this), dp.Value + this.e + 1, rm);
+            return BigHelperFunctions.round(new Big(this, this.Config), dp.Value + this.e + 1, rm);
         }
 
 
         /// <summary>
         /// 
         /// </summary>
-        /// <returns><br>Return a new Big whose value is the square root of the value of this Big, rounded, if</br>
-        /// <br>necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.</br></returns>
+        /// <returns>Return a new Big whose value is the square root of the value of this Big, rounded, if<br />
+        /// necessary, to a maximum of Big.Config.DP decimal places using rounding mode Big.Config.RM.</returns>
         /// <exception cref="BigException"></exception>
         public Big Sqrt()
         {
@@ -1450,15 +733,15 @@ namespace BigSharp
             var x = this;
             double s = x.s;
             var e = x.e;
-            var half = new Big("0.5");
+            var half = new Big("0.5", x.Config);
 
             // Zero?
-            if (x.c[0] == 0) return new Big(x);
+            if (x.c[0] == 0) return new Big(x, x.Config);
 
             // Negative?
             if (s < 0)
             {
-                throw new BigException(NAME + "No square root");
+                throw new BigException(BigException.NAME + "No square root");
             }
 
             // Estimate.
@@ -1473,14 +756,14 @@ namespace BigSharp
                 s = Math.Sqrt(double.Parse(c));
                 e = ((e + 1) / 2 | 0) - (e < 0 ? 1 : e & 1);
                 var sString = s.ToExponential();
-                r = new Big((s == double.PositiveInfinity ? "5e" : sString.Substring(0, sString.IndexOf('e') + 1)) + e);
+                r = new Big((s == double.PositiveInfinity ? "5e" : sString.Substring(0, sString.IndexOf('e') + 1)) + e, x.Config);
             }
             else
             {
-                r = new Big(s.ToString(CultureInfo.InvariantCulture));
+                r = new Big(s.ToString(CultureInfo.InvariantCulture), x.Config);
             }
 
-            e = r.e + (Big.DP += 4);
+            e = r.e + (x.Config.DP += 4);
 
             // Newton-Raphson iteration.
             do
@@ -1489,7 +772,7 @@ namespace BigSharp
                 r = half.Times(t.Plus(x.Div(t)));
             } while (string.Join("", t.c.Slice(0, e)) != string.Join("", r.c.Slice(0, e)));
 
-            return round(r, (Big.DP -= 4) + r.e + 1, Big.RM);
+            return BigHelperFunctions.round(r, (x.Config.DP -= 4) + r.e + 1, x.Config.RM);
         }
 
 
@@ -1498,37 +781,7 @@ namespace BigSharp
         /// </summary>
         /// <param name="y"></param>
         /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Mul(string y) => _mul(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Mul(int y) => _mul(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Mul(long y) => _mul(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Mul(double y) => _mul(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Mul(decimal y) => _mul(new Big(y));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Mul(Big y) => _mul(new Big(y));
+        public Big Mul(BigArgument y) => _mul(new Big(y, this.Config));
         private Big _mul(Big y)
         {
             long[] c;
@@ -1600,43 +853,8 @@ namespace BigSharp
 
             return y;
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Times(string y) => Mul(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Times(int y) => Mul(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Times(long y) => Mul(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Times(double y) => Mul(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Times(decimal y) => Mul(y);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="y"></param>
-        /// <returns>A new Big whose value is the value of this Big times the value of Big y.</returns>
-        public Big Times(Big y) => Mul(y);
+        /// <inheritdoc cref="Mul" />
+        public Big Times(BigArgument y) => Mul(y);
 
 
         /// <summary>
@@ -1644,8 +862,8 @@ namespace BigSharp
         /// </summary>
         /// <param name="dp">{number} Decimal places: integer, 0 to MAX_DP inclusive.</param>
         /// <param name="rm">{RoundingMode} Rounding mode.</param>
-        /// <returns><br>A string representing the value of this Big in exponential notation rounded to dp fixed</br>
-        /// <br>decimal places using rounding mode rm, or Big.RM if rm is not specified.</br></returns>
+        /// <returns>A string representing the value of this Big in exponential notation rounded to dp fixed<br />
+        /// decimal places using rounding mode rm, or Big.Config.RM if rm is not specified.</returns>
         /// <exception cref="BigException"></exception>
         public string ToExponential(int? dp = null, RoundingMode? rm = null)
         {
@@ -1654,26 +872,26 @@ namespace BigSharp
 
             if (dp != null)
             {
-                if (dp != ~~dp || dp < 0 || dp > MAX_DP)
+                if (dp != ~~dp || dp < 0 || dp > x.Config.MAX_DP)
                 {
-                    throw new BigException(INVALID_DP);
+                    throw new BigException(BigException.INVALID_DP);
                 }
-                x = round(new Big(x), (int)(++dp), rm);
+                x = BigHelperFunctions.round(new Big(x, x.Config), (int)(++dp), rm);
                 for (; x.c.LongLength < dp;) ArrayExtensions.Push(ref x.c, 0);
             }
 
-            return stringify(x, true, n != 0);
+            return BigHelperFunctions.stringify(x, true, n != 0);
         }
 
 
         /// <summary>
-        /// ('-0').toFixed(0) is '0', but (-0.1).toFixed(0) is '-0'.
-        /// <br>('-0').toFixed(1) is '0.0', but (-0.01).toFixed(1) is '-0.0'.</br>
+        /// ('-0').toFixed(0) is '0', but (-0.1).toFixed(0) is '-0'.<br />
+        /// ('-0').toFixed(1) is '0.0', but (-0.01).toFixed(1) is '-0.0'.
         /// </summary>
         /// <param name="dp">{number} Decimal places: integer, 0 to MAX_DP inclusive.</param>
         /// <param name="rm">{RoundingMode} Rounding mode.</param>
-        /// <returns><br>A string representing the value of this Big in normal notation rounded to dp fixed</br>
-        /// <br>decimal places using rounding mode rm, or Big.RM if rm is not specified.</br></returns>
+        /// <returns>A string representing the value of this Big in normal notation rounded to dp fixed<br />
+        /// decimal places using rounding mode rm, or Big.RM if rm is not specified.</returns>
         /// <exception cref="BigException"></exception>
         public string ToFixed(long? dp = null, RoundingMode? rm = null)
         {
@@ -1682,36 +900,32 @@ namespace BigSharp
 
             if (dp != null)
             {
-                if (dp != ~~dp || dp < 0 || dp > MAX_DP)
+                if (dp != ~~dp || dp < 0 || dp > x.Config.MAX_DP)
                 {
-                    throw new BigException(INVALID_DP);
+                    throw new BigException(BigException.INVALID_DP);
                 }
-                x = round(new Big(x), dp.Value + x.e + 1, rm);
+                x = BigHelperFunctions.round(new Big(x, x.Config), dp.Value + x.e + 1, rm);
 
                 // x.e may have changed if the value is rounded up.
                 for (dp = dp + x.e + 1; x.c.LongLength < dp;) ArrayExtensions.Push(ref x.c, 0);
             }
 
-            return stringify(x, false, n != 0);
+            return BigHelperFunctions.stringify(x, false, n != 0);
         }
 
 
         /// <summary>
         /// Omit the sign for negative zero.
         /// </summary>
-        /// <returns><br>A string representing the value of this Big.</br>
-        /// <br>Exponential notation if this Big has a positive exponent equal to or greater than</br>
-        /// <br>Big.PE, or a negative exponent equal to or less than Big.NE.</br></returns>
+        /// <returns>A string representing the value of this Big.<br />
+        /// Exponential notation if this Big has a positive exponent equal to or greater than<br />
+        /// Big.Config.PE, or a negative exponent equal to or less than Big.Config.NE.</returns>
         public override string ToString()
         {
             var x = this;
-            return stringify(x, x.e <= Big.NE || x.e >= Big.PE, x.c[0] != 0);
+            return BigHelperFunctions.stringify(x, x.e <= x.Config.NE || x.e >= x.Config.PE, x.c[0] != 0);
         }
-
-        /// <summary>
-        /// Same as ToString
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc cref="ToString" />
         public string ToJSON() => ToString();
 
 
@@ -1722,23 +936,23 @@ namespace BigSharp
         /// <exception cref="BigException"></exception>
         public double ToNumber()
         {
-            var n = double.Parse(stringify(this, true, true), CultureInfo.InvariantCulture);
-            if (Big.STRICT == true && !this.Eq(n.ToString(CultureInfo.InvariantCulture)))
+            var n = double.Parse(BigHelperFunctions.stringify(this, true, true), CultureInfo.InvariantCulture);
+            if (this.Config.STRICT == true && !this.Eq(n.ToString(CultureInfo.InvariantCulture)))
             {
-                throw new BigException(NAME + "Imprecise conversion");
+                throw new BigException(BigException.NAME + "Imprecise conversion");
             }
             return n;
         }
 
 
         /// <summary>
-        /// Use exponential notation if sd is less than the number of digits necessary to represent
-        /// <br>the integer part of the value in normal notation.</br>
+        /// Use exponential notation if sd is less than the number of digits necessary to represent<br />
+        /// the integer part of the value in normal notation.
         /// </summary>
         /// <param name="sd">{number} Significant digits: integer, 1 to MAX_DP inclusive.</param>
         /// <param name="rm">{RoundingMode} Rounding mode.</param>
-        /// <returns><br>A string representing the value of this Big rounded to sd significant digits using</br>
-        /// <br>rounding mode rm, or Big.RM if rm is not specified.</br></returns>
+        /// <returns>A string representing the value of this Big rounded to sd significant digits using<br />
+        /// rounding mode rm, or Big.Config.RM if rm is not specified.</returns>
         /// <exception cref="BigException"></exception>
         public string ToPrecision(int? sd, RoundingMode? rm = null)
         {
@@ -1747,33 +961,33 @@ namespace BigSharp
 
             if (sd.HasValue)
             {
-                if (sd != ~~sd || sd < 1 || sd > MAX_DP)
+                if (sd != ~~sd || sd < 1 || sd > x.Config.MAX_DP)
                 {
-                    throw new BigException(INVALID + "precision");
+                    throw new BigException(BigException.INVALID + "precision");
                 }
-                x = round(new Big(x), sd.Value, rm);
+                x = BigHelperFunctions.round(new Big(x, x.Config), sd.Value, rm);
                 for (; x.c.LongLength < sd;) ArrayExtensions.Push(ref x.c, 0);
             }
 
-            return stringify(x, sd <= x.e || x.e <= Big.NE || x.e >= Big.PE, n != 0);
+            return BigHelperFunctions.stringify(x, sd <= x.e || x.e <= x.Config.NE || x.e >= x.Config.PE, n != 0);
         }
 
 
         /// <summary>
         /// Include the sign for negative zero.
         /// </summary>
-        /// <returns><br>A string representing the value of this Big.</br>
-        /// <br>Exponential notation if this Big has a positive exponent equal to or greater than</br>
-        /// <br>Big.PE, or a negative exponent equal to or less than Big.NE.</br></returns>
+        /// <returns>A string representing the value of this Big.<br />
+        /// Exponential notation if this Big has a positive exponent equal to or greater than<br />
+        /// Big.Config.PE, or a negative exponent equal to or less than Big.Config.NE.</returns>
         /// <exception cref="BigException"></exception>
         public string ValueOf()
         {
             var x = this;
-            if (Big.STRICT == true)
+            if (x.Config.STRICT == true)
             {
-                throw new BigException(NAME + "valueOf disallowed");
+                throw new BigException(BigException.NAME + "valueOf disallowed");
             }
-            return stringify(x, x.e <= Big.NE || x.e >= Big.PE, true);
+            return BigHelperFunctions.stringify(x, x.e <= x.Config.NE || x.e >= x.Config.PE, true);
         }
     }
 }

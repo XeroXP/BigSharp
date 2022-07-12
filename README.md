@@ -71,9 +71,12 @@ x.Eq(y) && x.Eq(z) && y.Eq(z)          // true
 In Big strict mode, creating a Big number from a primitive number is disallowed.
 
 ```csharp
-Big.STRICT = true
-x = new Big(1)                         // TypeError: [BigSharp] Invalid number
-y = new Big("1.0000000000000001")
+var bigFactory = new BigFactory(new BigConfig()
+{
+	STRICT = true
+});
+x = bigFactory.Big(1)                  // TypeError: [BigSharp] Invalid number
+y = bigFactory.Big("1.0000000000000001")
 y.ToNumber()                           // Error: [BigSharp] Imprecise conversion
 ```
 
@@ -105,14 +108,17 @@ x.ToPrecision(5)                       // "255.50"
 The arithmetic methods always return the exact result except `Div`, `Sqrt` and `Pow`
 (with negative exponent), as these methods involve division.
 
-The maximum number of decimal places and the rounding mode used to round the results of these methods is determined by the value of the `DP` and `RM` properties of the `Big` number constructor.
+The maximum number of decimal places and the rounding mode used to round the results of these methods is determined by the value of the `DP` and `RM` properties of the `Big` number factory.
 
 ```csharp
-Big.DP = 10
-Big.RM = RoundingMode.ROUND_HALF_UP
+var bigFactory = new BigFactory(new BigConfig()
+{
+	DP = 10,
+	RM = RoundingMode.ROUND_HALF_UP
+});
 
-x = new Big(2);
-y = new Big(3);
+x = bigFactory.Big(2);
+y = bigFactory.Big(3);
 z = x.Div(y)                           // "0.6666666667"
 z.Sqrt()                               // "0.8164965809"
 z.Pow(-3)                              // "3.3749999995"
@@ -129,7 +135,7 @@ x.e                                    // 2                exponent
 x.s                                    // -1               sign
 ```
 
-For advanced usage, multiple Big number constructors can be created, each with an independent configuration.
+For advanced usage, multiple Big number factories can be created, each with an independent configuration.
 
 For further information see the [API](../../wiki/) reference documentation.
 
