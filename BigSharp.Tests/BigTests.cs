@@ -12,14 +12,14 @@ namespace BigSharp.Tests
         {
         }
 
-        internal static int count = 0, passed = 0;
+        internal static long count = 0, passed = 0;
 
         /*internal static void Write(string str)
         {
             Console.WriteLine(str);
         }*/
 
-        internal static void Fail(int count, object expected, object actual)
+        internal static void Fail(long count, object expected, object actual)
         {
             //Write("\n  Test number " + count + " failed" + "\n  Expected: " + expected.ToString() + "\n  Actual:   " + actual.ToString());
             Assert.Fail("Test number " + count + " failed" + "\nExpected: " + expected.ToString() + "\nActual:   " + actual.ToString());
@@ -30,7 +30,7 @@ namespace BigSharp.Tests
             return n != null && n.c != null && n.c.Length == 1 && n.c[0] == 0 && n.e == 0 && (n.s == 1 || n.s == -1);
         }
 
-        internal static void AreEqual(string expected, string actual)
+        internal static void AreEqual(string? expected, string? actual)
         {
             ++count;
 

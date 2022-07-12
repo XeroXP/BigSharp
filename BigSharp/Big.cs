@@ -22,6 +22,7 @@ namespace BigSharp
         public Big(BigArgument n, BigConfig? config = null) : this(config)
         {
             string nString = "";
+            bool isBig = false;
             n.Switch(
                 @double =>
                 {
@@ -68,10 +69,10 @@ namespace BigSharp
                         throw new BigException(BigException.INVALID + "Big");
 
                     _Big(big);
-                    return;
+                    isBig = true;
                 }
             );
-            BigHelperFunctions.parse(this, nString);
+            if (!isBig) BigHelperFunctions.parse(this, nString);
         }
 
         private void _Big(Big n)

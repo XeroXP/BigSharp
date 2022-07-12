@@ -18,9 +18,9 @@ namespace BigSharp.Tests
 
             var t = (BigArgument dividend, BigArgument divisor, object expected0) =>
             {
-                string expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
+                string? expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
 
-                BigTests.AreEqual(expected.ToString(), bigFactory.Big(dividend).Div(divisor).ToString());
+                BigTests.AreEqual(expected?.ToString(), bigFactory.Big(dividend).Div(divisor).ToString());
             };
 
             bigFactory.Config.DP = 40;
@@ -617,6 +617,21 @@ namespace BigSharp.Tests
             t("-5", "-2.36", "2");
             bigFactory.Config.DP = 1;
             t("-1", "159.44", "0");
+
+            Assert.Pass();
+        }
+
+        [Test]
+        public void Div2()
+        {
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (BigArgument dividend, BigArgument divisor, object expected0) =>
+            {
+                string? expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
+
+                BigTests.AreEqual(expected?.ToString(), bigFactory.Big(dividend).Div(divisor).ToString());
+            };
 
             bigFactory.Config.RM = RoundingMode.ROUND_HALF_UP;
             bigFactory.Config.DP = 0;
@@ -9668,6 +9683,21 @@ namespace BigSharp.Tests
             bigFactory.Config.DP = 230;
             t("3.458248554e+3", "-1.4e+0", "-2470.17753857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857142857");
 
+            Assert.Pass();
+        }
+
+        [Test]
+        public void Div3()
+        {
+            var bigFactory = new BigFactory(new BigConfig());
+
+            var t = (BigArgument dividend, BigArgument divisor, object expected0) =>
+            {
+                string? expected = expected0.ToExpectedString(bigFactory.Config.PE, bigFactory.Config.NE);
+
+                BigTests.AreEqual(expected?.ToString(), bigFactory.Big(dividend).Div(divisor).ToString());
+            };
+
             // Invalid "Big.DP"s
             bigFactory.Config.RM = RoundingMode.ROUND_DOWN;
 
@@ -9817,8 +9847,8 @@ namespace BigSharp.Tests
             BigTests.IsException(() => { bigFactory.Big("-9.99").Div(0); }, "Big('-9.99').div(0)");
 
             // Invalid divisors.
-            BigTests.IsException(() => { bigFactory.Big("12.345").Div((Big)null); }, ".div(null)");
-            BigTests.IsException(() => { bigFactory.Big("12.345").Div((string)null); }, ".div(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Div((Big?)null); }, ".div(null)");
+            BigTests.IsException(() => { bigFactory.Big("12.345").Div((string?)null); }, ".div(null)");
             BigTests.IsException(() => { bigFactory.Big("12.345").Div(""); }, ".div('')");
             BigTests.IsException(() => { bigFactory.Big("12.345").Div(" "); }, ".div(' ')");
             BigTests.IsException(() => { bigFactory.Big("12.345").Div("hello"); }, ".div('hello')");

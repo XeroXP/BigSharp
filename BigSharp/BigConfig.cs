@@ -12,7 +12,7 @@
         {
             get { return _dp; }
             set {
-                if (value < 1 || value > MAX_DP)
+                if (value < 0 || value > MAX_DP)
                     throw new BigException(BigException.INVALID + nameof(DP) + ": " + value);
                 _dp = value;
             }
@@ -65,7 +65,7 @@
             get { return _ne; }
             set
             {
-                if (value < 0 || value > (int)-1E6)
+                if (value < (int)-1E6 || value > 0)
                     throw new BigException(BigException.INVALID + nameof(NE) + ": " + value);
                 _ne = value;
             }
