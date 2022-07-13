@@ -143,7 +143,7 @@ For further information see the [API](../../wiki/) reference documentation.
 System requirements
 -------------------
 
-BNSharp supports:
+BigSharp supports:
 
 * Net 6
 
